@@ -1,0 +1,119 @@
+enum SortBy {
+    DATE
+    PRICE
+}
+enum SortDir {
+    ASC
+    DESC
+}
+
+enum ProductCondition {
+    EXCELLENT
+    GOOD
+    CORRECT
+    USED
+    DAMAGED
+}
+
+type Product {
+    id: ID!
+    name: String!
+    description: String
+    price: Int!
+    size: String
+    color: String
+    imagesUrl: [String!]!
+    condition: ProductCondition!
+    createdAt: String!
+    updatedAt: String!
+    sellerId: ID! # I have to specify this sellerId key to make it non null-able
+    sellerProfile: SellerProfile!
+}
+
+type Favorite {
+    id: ID!
+    userId: ID!
+    productId: ID!
+    # products: [Product!]!
+    product: Product!
+    createdAt: String!
+}
+
+type ProductsPage {
+    products: [Product!]!
+    totalProducts: Int!
+    totalPages: Int!
+    currentPage: Int!
+}
+
+type Category {
+    id: ID!
+    name: String!
+    createdAt: String!
+    updatedAt: String!
+    products: [Product!]!
+    # productCategories: ProductCategory!
+    # productCategories: [ProductCategory!]!
+}
+
+type ProductCategory {
+    id: ID!
+    productId: ID!
+    categoryId: ID!
+    # product: Product! # ou products: [Product!]!
+    products: [Product!]!
+    createdAt: String!
+    updatedAt: String!
+}
+
+input CreateProductInput {
+    name: String!
+    description: String
+    price: Int!
+    size: String
+    imagesUrl: [String!]!
+    condition: ProductCondition!
+    sellerId: ID!
+}
+
+input UpdateProductInput {
+    id: ID!
+    name: String!
+    description: String
+    price: Int!
+    size: String
+    imagesUrl: [String!]!
+    condition: ProductCondition!
+    # userId: ID!
+    sellerId: ID!
+}
+
+input PaginationInput {
+    page: Int = 1
+    pageSize: Int = 12
+    sortDirection: SortDir = DESC
+    sortBy: SortBy #@ = DATE
+    # sortDirection: SortDir = DESC
+    # sortBy: SortBy = CREATED_AT
+}
+
+input ProductFilterInput {
+    q: String
+    minPrice: Int = 0
+    maxPrice: Int = 10000
+    size: String
+    condition: ProductCondition!
+    category: String
+    # category: Category
+    color: String
+    search: String
+}
+
+input FavoritesInput {
+    userId: ID!
+    productId: ID!
+}
+# input FavoritesInput {
+#     userId: ID!
+#     productId: ID!
+# }

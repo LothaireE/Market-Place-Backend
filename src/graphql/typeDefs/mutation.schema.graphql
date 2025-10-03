@@ -1,0 +1,17 @@
+type Mutation {
+    createProduct(newProduct: CreateProductInput!): Product!
+    updateProduct(productUpdates: UpdateProductInput!): Product!
+    deleteSingleProduct(id: ID!): Product
+    deleteAllProducts: [Product]
+    createSellerProfile(newSellerProfile: SellerProfileInput!): SellerProfile!
+    updateSellerProfile(
+        sellerProfileUpdates: UpdateSellerProfileInput!
+    ): SellerProfile!
+    deleteSellerProfile(id: ID!): SellerProfile
+    addToFavorites(favoriteInput: FavoritesInput!): Favorite
+    removeFromFavorites(favoriteInput: FavoritesInput!): Favorite
+    createCategory(name: String!): Category!
+    deleteCategory(id: ID!): Category
+    addToProductCategories(productId: ID!, categoryId: ID!): ProductCategory!
+    removeFromProductCategories(id: ID!): ProductCategory
+}

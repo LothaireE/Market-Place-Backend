@@ -1,0 +1,50 @@
+# enum VerificationStatus {
+#     PENDING = "pending",
+#     VERIFIED = "verified",
+#     REJECTED = "rejected"
+# }
+enum VerificationStatus {
+    PENDING
+    VERIFIED
+    REJECTED
+}
+
+type User {
+    id: ID!
+    username: String!
+    email: String!
+    # password: String!
+    avatarUrl: String
+    createdAt: String!
+    updatedAt: String!
+}
+
+type SellerProfile {
+    id: ID!
+    userId: ID!
+    user: User!
+    products: [Product!]!
+    bio: String
+    rating: Int
+    shopName: String
+    payoutAccount: String
+    verified: VerificationStatus!
+    createdAt: String!
+    updatedAt: String!
+}
+
+input SellerProfileInput {
+    userId: ID!
+    bio: String
+    shopName: String
+    payoutAccount: String
+    verified: VerificationStatus! # = PENDING
+}
+
+input UpdateSellerProfileInput {
+    id: ID!
+    bio: String
+    shopName: String
+    payoutAccount: String
+    verified: VerificationStatus!
+}
