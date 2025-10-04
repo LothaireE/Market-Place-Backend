@@ -31,7 +31,7 @@ export type CreateProductInput = {
   imagesUrl: Array<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   price: Scalars['Int']['input'];
-  sellerId: Scalars['ID']['input'];
+  sellerId?: InputMaybe<Scalars['ID']['input']>;
   size?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -52,6 +52,7 @@ export type FavoritesInput = {
 export type Mutation = {
   __typename?: 'Mutation';
   addToFavorites?: Maybe<Favorite>;
+  addToProductCategories: ProductCategory;
   createCategory: Category;
   createProduct: Product;
   createSellerProfile: SellerProfile;
@@ -59,8 +60,8 @@ export type Mutation = {
   deleteCategory?: Maybe<Category>;
   deleteSellerProfile?: Maybe<SellerProfile>;
   deleteSingleProduct?: Maybe<Product>;
-  productCategories: ProductCategory;
   removeFromFavorites?: Maybe<Favorite>;
+  removeFromProductCategories?: Maybe<ProductCategory>;
   updateProduct: Product;
   updateSellerProfile: SellerProfile;
 };
@@ -68,6 +69,12 @@ export type Mutation = {
 
 export type MutationAddToFavoritesArgs = {
   favoriteInput: FavoritesInput;
+};
+
+
+export type MutationAddToProductCategoriesArgs = {
+  categoryId: Scalars['ID']['input'];
+  productId: Scalars['ID']['input'];
 };
 
 
@@ -101,14 +108,13 @@ export type MutationDeleteSingleProductArgs = {
 };
 
 
-export type MutationProductCategoriesArgs = {
-  categoryId: Scalars['ID']['input'];
-  productId: Scalars['ID']['input'];
+export type MutationRemoveFromFavoritesArgs = {
+  favoriteInput: FavoritesInput;
 };
 
 
-export type MutationRemoveFromFavoritesArgs = {
-  favoriteInput: FavoritesInput;
+export type MutationRemoveFromProductCategoriesArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -188,6 +194,7 @@ export type Query = {
   favorites: Array<Favorite>;
   product?: Maybe<Product>;
   products: ProductsPage;
+  sellerProducts: Array<Product>;
   sellerProfile?: Maybe<SellerProfile>;
   sellerProfiles: Array<SellerProfile>;
   user?: Maybe<User>;
@@ -200,11 +207,6 @@ export type QueryCategoryArgs = {
 };
 
 
-export type QueryFavoritesArgs = {
-  id: Scalars['ID']['input'];
-};
-
-
 export type QueryProductArgs = {
   id: Scalars['ID']['input'];
 };
@@ -213,11 +215,6 @@ export type QueryProductArgs = {
 export type QueryProductsArgs = {
   filter?: InputMaybe<ProductFilterInput>;
   pagination: PaginationInput;
-};
-
-
-export type QuerySellerProfileArgs = {
-  id: Scalars['ID']['input'];
 };
 
 
@@ -265,7 +262,7 @@ export type UpdateProductInput = {
   imagesUrl: Array<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   price: Scalars['Int']['input'];
-  sellerId: Scalars['ID']['input'];
+  sellerId?: InputMaybe<Scalars['ID']['input']>;
   size?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -434,6 +431,7 @@ export type FavoriteResolvers<ContextType = any, ParentType extends ResolversPar
 
 export type MutationResolvers<ContextType = any, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
   addToFavorites?: Resolver<Maybe<ResolversTypes['Favorite']>, ParentType, ContextType, RequireFields<MutationAddToFavoritesArgs, 'favoriteInput'>>;
+  addToProductCategories?: Resolver<ResolversTypes['ProductCategory'], ParentType, ContextType, RequireFields<MutationAddToProductCategoriesArgs, 'categoryId' | 'productId'>>;
   createCategory?: Resolver<ResolversTypes['Category'], ParentType, ContextType, RequireFields<MutationCreateCategoryArgs, 'name'>>;
   createProduct?: Resolver<ResolversTypes['Product'], ParentType, ContextType, RequireFields<MutationCreateProductArgs, 'newProduct'>>;
   createSellerProfile?: Resolver<ResolversTypes['SellerProfile'], ParentType, ContextType, RequireFields<MutationCreateSellerProfileArgs, 'newSellerProfile'>>;
@@ -441,8 +439,8 @@ export type MutationResolvers<ContextType = any, ParentType extends ResolversPar
   deleteCategory?: Resolver<Maybe<ResolversTypes['Category']>, ParentType, ContextType, RequireFields<MutationDeleteCategoryArgs, 'id'>>;
   deleteSellerProfile?: Resolver<Maybe<ResolversTypes['SellerProfile']>, ParentType, ContextType, RequireFields<MutationDeleteSellerProfileArgs, 'id'>>;
   deleteSingleProduct?: Resolver<Maybe<ResolversTypes['Product']>, ParentType, ContextType, RequireFields<MutationDeleteSingleProductArgs, 'id'>>;
-  productCategories?: Resolver<ResolversTypes['ProductCategory'], ParentType, ContextType, RequireFields<MutationProductCategoriesArgs, 'categoryId' | 'productId'>>;
   removeFromFavorites?: Resolver<Maybe<ResolversTypes['Favorite']>, ParentType, ContextType, RequireFields<MutationRemoveFromFavoritesArgs, 'favoriteInput'>>;
+  removeFromProductCategories?: Resolver<Maybe<ResolversTypes['ProductCategory']>, ParentType, ContextType, RequireFields<MutationRemoveFromProductCategoriesArgs, 'id'>>;
   updateProduct?: Resolver<ResolversTypes['Product'], ParentType, ContextType, RequireFields<MutationUpdateProductArgs, 'productUpdates'>>;
   updateSellerProfile?: Resolver<ResolversTypes['SellerProfile'], ParentType, ContextType, RequireFields<MutationUpdateSellerProfileArgs, 'sellerProfileUpdates'>>;
 };
@@ -484,10 +482,11 @@ export type ProductsPageResolvers<ContextType = any, ParentType extends Resolver
 export type QueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
   categories?: Resolver<Array<ResolversTypes['Category']>, ParentType, ContextType>;
   category?: Resolver<Maybe<ResolversTypes['Category']>, ParentType, ContextType, RequireFields<QueryCategoryArgs, 'id'>>;
-  favorites?: Resolver<Array<ResolversTypes['Favorite']>, ParentType, ContextType, RequireFields<QueryFavoritesArgs, 'id'>>;
+  favorites?: Resolver<Array<ResolversTypes['Favorite']>, ParentType, ContextType>;
   product?: Resolver<Maybe<ResolversTypes['Product']>, ParentType, ContextType, RequireFields<QueryProductArgs, 'id'>>;
   products?: Resolver<ResolversTypes['ProductsPage'], ParentType, ContextType, RequireFields<QueryProductsArgs, 'pagination'>>;
-  sellerProfile?: Resolver<Maybe<ResolversTypes['SellerProfile']>, ParentType, ContextType, RequireFields<QuerySellerProfileArgs, 'id'>>;
+  sellerProducts?: Resolver<Array<ResolversTypes['Product']>, ParentType, ContextType>;
+  sellerProfile?: Resolver<Maybe<ResolversTypes['SellerProfile']>, ParentType, ContextType>;
   sellerProfiles?: Resolver<Array<ResolversTypes['SellerProfile']>, ParentType, ContextType>;
   user?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<QueryUserArgs, 'id'>>;
   users?: Resolver<Array<ResolversTypes['User']>, ParentType, ContextType>;
