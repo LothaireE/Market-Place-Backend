@@ -1,18 +1,15 @@
 type Query {
     user(id: ID!): User
     users: [User!]!
-    sellerProfile(id: ID!): SellerProfile
+    sellerProfile: SellerProfile
     sellerProfiles: [SellerProfile!]!
     product(id: ID!): Product
     products(
         filter: ProductFilterInput
         pagination: PaginationInput!
     ): ProductsPage!
-    # products: [Product!]!
-    favorites(id: ID!): [Favorite!]! #[Product!]!
+    sellerProducts: [Product!]!
+    favorites: [Favorite!]!
     categories: [Category!]!
     category(id: ID!): Category
-    # category(name: String!): Category # Pour récupérer une catégorie par son nom pas afficher les produits associés
-    # category(id: ID!): [ProductCategory!]!
-    # productCategory: [ProductCategory!]!
 }

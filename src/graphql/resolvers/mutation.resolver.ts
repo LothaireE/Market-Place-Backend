@@ -13,23 +13,9 @@ import { GraphQLContext } from '../../types/context.type';
 import { ERROR_MESSAGES } from '../../constants/messages';
 import { GraphQLError } from 'graphql';
 import { JWTPayload } from '../../types/user';
-import db from '../../db/db';
+import { isSeller } from '../../utils/utils';
+import { forbid, unauth, notFound } from '../errors';
 
-async function isSeller(token:JWTPayload) {
-
-        const {userId} = token
-        if (!userId) throw new GraphQLError('Forbidden', {
-            extensions: { code: 'FORBIDDEN', error: ERROR_MESSAGES.USER.NOT_FOUND }
-        });
-
-        const sellerProfile = await db.query.sellerProfiles.findFirst({
-            where: eq(sellerProfiles.userId, userId)
-        })
-        if (!sellerProfile) throw new GraphQLError('Forbidden', {
-            extensions: { code: 'FORBIDDEN', error: ERROR_MESSAGES.SELLER.NOT_FOUND }
-        })
-        return true;
-}
 
 export const mutationResolvers = <MutationResolvers>{
     Mutation: {
@@ -38,22 +24,30 @@ export const mutationResolvers = <MutationResolvers>{
             args: { newProduct: CreateProductInput }, //Book },
             context: GraphQLContext
         ) => {
-            // const userId = context.token?.userId;
-            // const { token } = context;
-            const seller = context.token && await isSeller(context.token); // isSeller(context.token as JWTPayload);
-            console.log('seller ===> ', seller);
-            if (seller) {
-                const result = await context.db
-                    .insert(products)
-                    .values(args.newProduct)
-                    .returning();
-                return firstElem(result);
-            }
-            // const result = await context.db
-            //     .insert(products)
-            //     .values(args.newProduct)
-            //     .returning();
-            // return firstElem(result);
+
+            const { token } = context;
+            if (!token) throw unauth(ERROR_MESSAGES.AUTH.UNAUTHORIZED);
+
+            const seller = await isSeller(token as JWTPayload);
+
+            if (!seller) throw forbid(ERROR_MESSAGES.SELLER.NOT_FOUND)
+            
+
+            const newProductValues = {
+                name: args.newProduct.name,
+                description: args.newProduct.description ?? null,
+                price: args.newProduct.price,
+                size: args.newProduct.size ?? null,
+                imagesUrl: args.newProduct.imagesUrl ?? [],
+                condition: args.newProduct.condition ?? "GOOD",
+                sellerId: seller.id, 
+            };
+
+            const result = await context.db
+                .insert(products)
+                .values(newProductValues)
+                .returning();
+            return firstElem(result);
         },
 
         updateProduct: async (
@@ -61,12 +55,28 @@ export const mutationResolvers = <MutationResolvers>{
             args: {productUpdate : UpdateProductInput}, //{ productUpdates: Partial<createProductInput> & { id: string } },
             context: GraphQLContext
         )=>{
+            const { token } = context;
+            if (!token) throw new GraphQLError('Unauthorized', {
+                extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.UNAUTHORIZED }
+            });
+            
+            const seller = await isSeller(token as JWTPayload);
+            if (!seller) throw new GraphQLError('Forbidden', {
+                extensions: { code: 'FORBIDDEN', error: ERROR_MESSAGES.SELLER.NOT_FOUND }
+            });
+
+            const updateProductValues = { ...args.productUpdate, sellerId: seller.id };
+            
             const result = await context.db
                 .update(products)
-                .set(args.productUpdate)
-                .where(eq(products.id, args.productUpdate.id))
+                .set(updateProductValues) //(args.productUpdate)
+                .where(and(eq(products.id, args.productUpdate.id), eq(products.sellerId, seller.id)))
                 .returning();
+            
+            if (result.length === 0) throw notFound(ERROR_MESSAGES.PRODUCT.NOT_FOUND);
+            
             return firstElem(result);
+
         },
 
         deleteSingleProduct: async (
@@ -75,13 +85,25 @@ export const mutationResolvers = <MutationResolvers>{
             context: GraphQLContext
         )=>{
             const { token } = context;
-            if (!token) throw new Error(ERROR_MESSAGES.AUTH.UNAUTHORIZED);
+            if (!token) throw new GraphQLError('Unauthorized', {
+                extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.UNAUTHORIZED }
+            });
+
+            const seller = await isSeller(token as JWTPayload);
+            if (!seller) throw new GraphQLError('Forbidden', {
+                extensions: { code: 'FORBIDDEN', error: ERROR_MESSAGES.SELLER.NOT_FOUND }
+            });
+            
             const result = await context.db
                 .delete(products)
-                .where(eq(products.id, args.id))
+                .where(and(eq(products.id, args.id), eq(products.sellerId, seller.id)))
                 .returning();
+            
+            if (result.length === 0) throw notFound(ERROR_MESSAGES.PRODUCT.NOT_FOUND);
+
             return firstElem(result);
         },
+
         deleteAllProducts: async (
             _: any,
             __: any,
@@ -205,15 +227,3 @@ export const mutationResolvers = <MutationResolvers>{
         }
     }
 };
-
-
-// if (!userId) throw new GraphQLError('Forbidden', {
-//                 extensions: { code: 'FORBIDDEN', error: ERROR_MESSAGES.USER.NOT_FOUND }
-//             });
-
-//             const sellerProfile = await context.db.query.sellerProfiles.findFirst({
-//                 where: eq(sellerProfiles.userId, userId)
-//             })
-//             if (!sellerProfile) throw new GraphQLError('Forbidden', {
-//                 extensions: { code: 'FORBIDDEN', error: ERROR_MESSAGES.SELLER.NOT_FOUND }
-//             })

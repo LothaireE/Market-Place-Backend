@@ -6,7 +6,7 @@ import { MAX_PRICE, MIN_PRICE, MAX_PAGE_SIZE } from '../../config/config';
 import { firstElem } from '../../utils/utils';
 import { GraphQLError } from 'graphql';
 import { ERROR_MESSAGES } from '../../constants/messages';
-
+import { isSeller } from '../../utils/utils';
 
 
 export const queryResolvers = <QueryResolvers>{
@@ -19,10 +19,16 @@ export const queryResolvers = <QueryResolvers>{
         users: (_: any, __: any, context: GraphQLContext) =>
             context.db.select().from(users),
 
-        sellerProfile: (_:any, args: { id : string }, context: GraphQLContext) =>
-            context.db.query.sellerProfiles.findFirst({
-                where: eq(sellerProfiles.id, args.id)
-            }),
+        sellerProfile: (_:any, __: any, context: GraphQLContext) => {
+            const userId = context.token?.userId;
+            if (!userId) throw new GraphQLError('Unauthorized', {
+                extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
+            });
+
+            return context.db.query.sellerProfiles.findFirst({
+                where: eq(sellerProfiles.userId, userId)
+            })
+        },            
 
         sellerProfiles: (_:any, __:any, context: GraphQLContext) =>
             context.db.select().from(sellerProfiles),
@@ -31,9 +37,7 @@ export const queryResolvers = <QueryResolvers>{
             context.db.query.products.findFirst({
                 where: eq(products.id, args.id)
             }),
-        // products: (_: any, __: any, context: GraphQLContext) => {
-        //     return context.db.select().from(products);
-        // },
+
         products: async (_: any, args: {filter: ProductFilterInput, pagination: PaginationInput}, context: GraphQLContext) => {
             const page = Math.max(1, args.pagination.page ?? 1);
             const pageSize = Math.min(100, Math.max(1, args.pagination.pageSize ?? MAX_PAGE_SIZE));
@@ -74,25 +78,27 @@ export const queryResolvers = <QueryResolvers>{
             return { products: productsQuery, totalPages: totalPages, totalProducts: Number(firstElem(productsCount)?.count ?? 0), currentPage: page  };
         },
 
-        favorites: async (_:any, args:{id: string}, context: GraphQLContext) =>{
+        sellerProducts: async (_: any, __:any, context: GraphQLContext) => {
             if (!context.token) throw new GraphQLError('Unauthorized', {
                 extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
             });
-            // console.log('context ===> ', context?.token);
-            // const { userId } = context.token;
-            // if (!userId) throw new GraphQLError('Forbidden', {
-            //     extensions: { code: 'FORBIDDEN', error: ERROR_MESSAGES.USER.NOT_FOUND }
-            // });
+            const seller = await isSeller(context.token);
+            if (!seller) throw new GraphQLError('Forbidden', {
+                extensions: { code: 'FORBIDDEN', error: ERROR_MESSAGES.SELLER.NOT_FOUND }
+            })
 
-            // const sellerProfile = await context.db.query.sellerProfiles.findFirst({
-            //     where: eq(sellerProfiles.userId, userId)
-            // })
-            // if (!sellerProfile) throw new GraphQLError('Forbidden', {
-            //     extensions: { code: 'FORBIDDEN', error: ERROR_MESSAGES.SELLER.NOT_FOUND }
-            // })
+            return context.db.select().from(products)
+                .where(eq(products.sellerId, seller.id));
+        },
+
+        favorites: async (_:any, __:any, context: GraphQLContext) =>{
+            if (!context.token) throw new GraphQLError('Unauthorized', {
+                extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
+            });
+            const userId = context.token?.userId;
 
             return context.db.query.favorites.findMany({
-                where: eq(favorites.userId, args.id)
+                where: eq(favorites.userId, userId)
             })
         },
         categories: (_:any, __:any, context: GraphQLContext) =>

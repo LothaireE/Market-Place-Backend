@@ -26,7 +26,7 @@ type Product {
     condition: ProductCondition!
     createdAt: String!
     updatedAt: String!
-    sellerId: ID! # I have to specify this sellerId key to make it non null-able
+    sellerId: ID!
     sellerProfile: SellerProfile!
 }
 
@@ -34,7 +34,6 @@ type Favorite {
     id: ID!
     userId: ID!
     productId: ID!
-    # products: [Product!]!
     product: Product!
     createdAt: String!
 }
@@ -52,15 +51,12 @@ type Category {
     createdAt: String!
     updatedAt: String!
     products: [Product!]!
-    # productCategories: ProductCategory!
-    # productCategories: [ProductCategory!]!
 }
 
 type ProductCategory {
     id: ID!
     productId: ID!
     categoryId: ID!
-    # product: Product! # ou products: [Product!]!
     products: [Product!]!
     createdAt: String!
     updatedAt: String!
@@ -73,7 +69,7 @@ input CreateProductInput {
     size: String
     imagesUrl: [String!]!
     condition: ProductCondition!
-    sellerId: ID!
+    sellerId: ID
 }
 
 input UpdateProductInput {
@@ -84,8 +80,7 @@ input UpdateProductInput {
     size: String
     imagesUrl: [String!]!
     condition: ProductCondition!
-    # userId: ID!
-    sellerId: ID!
+    sellerId: ID
 }
 
 input PaginationInput {
@@ -113,7 +108,3 @@ input FavoritesInput {
     userId: ID!
     productId: ID!
 }
-# input FavoritesInput {
-#     userId: ID!
-#     productId: ID!
-# }

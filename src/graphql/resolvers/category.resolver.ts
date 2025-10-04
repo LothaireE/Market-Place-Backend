@@ -7,7 +7,7 @@ export const categoryResolvers = <CategoryResolvers>{
     Category: {
         
           products: async (parent: Category, __: any, context: GraphQLContext) => {
-
+            
             const result = await context.db.query.productCategories.findMany({
             where: eq(productCategories.categoryId, parent.id),
             with: {
