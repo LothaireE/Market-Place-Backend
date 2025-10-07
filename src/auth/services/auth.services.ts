@@ -60,8 +60,12 @@ class AuthService {
 
         await RefreshTokenModel.store(user.id, refreshToken, expiresAt);
 
+        let returnedUser = {...user};
+        returnedUser.id="Sending back the id is a bad practice, work solely with access and refresh tokens";
+
         return {
-            user,
+            // user,
+            user: returnedUser,
             accessToken,
             refreshToken
         };
