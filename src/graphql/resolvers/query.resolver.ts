@@ -75,7 +75,7 @@ export const queryResolvers = <QueryResolvers>{
          
             const totalPages = Math.ceil((Number(firstElem(productsCount)?.count ?? 0)) / pageSize);
 
-            return { products: productsQuery, totalPages: totalPages, totalProducts: Number(firstElem(productsCount)?.count ?? 0), currentPage: page  };
+            return { items: productsQuery, totalPages: totalPages, totalProducts: Number(firstElem(productsCount)?.count ?? 0), currentPage: page  };
         },
 
         sellerProducts: async (_: any, __:any, context: GraphQLContext) => {

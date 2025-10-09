@@ -39,7 +39,7 @@ type Favorite {
 }
 
 type ProductsPage {
-    products: [Product!]!
+    items: [Product!]!
     totalProducts: Int!
     totalPages: Int!
     currentPage: Int!

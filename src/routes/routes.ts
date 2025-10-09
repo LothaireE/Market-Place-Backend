@@ -18,6 +18,6 @@ export default function setupRoutes(application: Express) {
 
 // separated auth routes from graphql
 export function setupAuthRoutes(application: Express) {
-    application.use('/api', [authRoutes]);
+    application.use('/api/auth', [authRoutes]);
     application.use(routeNotFound);
 }
