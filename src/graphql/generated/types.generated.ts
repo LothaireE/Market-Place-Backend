@@ -182,7 +182,7 @@ export type ProductFilterInput = {
 export type ProductsPage = {
   __typename?: 'ProductsPage';
   currentPage: Scalars['Int']['output'];
-  products: Array<Product>;
+  items: Array<Product>;
   totalPages: Scalars['Int']['output'];
   totalProducts: Scalars['Int']['output'];
 };
@@ -473,7 +473,7 @@ export type ProductCategoryResolvers<ContextType = any, ParentType extends Resol
 
 export type ProductsPageResolvers<ContextType = any, ParentType extends ResolversParentTypes['ProductsPage'] = ResolversParentTypes['ProductsPage']> = {
   currentPage?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  products?: Resolver<Array<ResolversTypes['Product']>, ParentType, ContextType>;
+  items?: Resolver<Array<ResolversTypes['Product']>, ParentType, ContextType>;
   totalPages?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   totalProducts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;

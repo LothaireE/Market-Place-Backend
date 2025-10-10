@@ -7,9 +7,9 @@ import { validate } from '../middlewares/validate';
 const authRouter = Router();
 
 // POST
-authRouter.post('/auth/login', validate(loginValidator), AuthController.login);
-authRouter.post('/auth/signup', validate(signupValidator), AuthController.signup);
-authRouter.post('/auth/refresh', AuthController.refreshToken);
-authRouter.post('/auth/logout', AuthController.logout);
+authRouter.post('/login', validate(loginValidator), AuthController.login);
+authRouter.post('/signup', validate(signupValidator), AuthController.signup);
+authRouter.post('/refresh', AuthController.refreshToken);
+authRouter.post('/logout', AuthController.logout);
 
 export default authRouter;
