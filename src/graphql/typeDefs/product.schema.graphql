@@ -15,6 +15,16 @@ enum ProductCondition {
     DAMAGED
 }
 
+type ProductImage {
+    publicId: String
+    url: String
+    width: Int
+    height: Int
+    bytes: Int
+    format: String
+    name: String
+}
+
 type Product {
     id: ID!
     name: String!
@@ -28,6 +38,7 @@ type Product {
     updatedAt: String!
     sellerId: ID!
     sellerProfile: SellerProfile!
+    images: [ProductImage!]!
 }
 
 type Favorite {
@@ -67,6 +78,7 @@ input CreateProductInput {
     description: String
     price: Int!
     size: String
+    color: String
     imagesUrl: [String!]!
     condition: ProductCondition!
     sellerId: ID

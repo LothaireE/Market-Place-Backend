@@ -26,6 +26,7 @@ export type Category = {
 };
 
 export type CreateProductInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
   condition: ProductCondition;
   description?: InputMaybe<Scalars['String']['input']>;
   imagesUrl: Array<Scalars['String']['input']>;
@@ -141,6 +142,7 @@ export type Product = {
   createdAt: Scalars['String']['output'];
   description?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
+  images: Array<ProductImage>;
   imagesUrl: Array<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   price: Scalars['Int']['output'];
@@ -177,6 +179,17 @@ export type ProductFilterInput = {
   q?: InputMaybe<Scalars['String']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
   size?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ProductImage = {
+  __typename?: 'ProductImage';
+  bytes?: Maybe<Scalars['Int']['output']>;
+  format?: Maybe<Scalars['String']['output']>;
+  height?: Maybe<Scalars['Int']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  publicId?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+  width?: Maybe<Scalars['Int']['output']>;
 };
 
 export type ProductsPage = {
@@ -374,6 +387,7 @@ export type ResolversTypes = {
   ProductCategory: ResolverTypeWrapper<ProductCategory>;
   ProductCondition: ProductCondition;
   ProductFilterInput: ProductFilterInput;
+  ProductImage: ResolverTypeWrapper<ProductImage>;
   ProductsPage: ResolverTypeWrapper<ProductsPage>;
   Query: ResolverTypeWrapper<{}>;
   SellerProfile: ResolverTypeWrapper<SellerProfile>;
@@ -401,6 +415,7 @@ export type ResolversParentTypes = {
   Product: Product;
   ProductCategory: ProductCategory;
   ProductFilterInput: ProductFilterInput;
+  ProductImage: ProductImage;
   ProductsPage: ProductsPage;
   Query: {};
   SellerProfile: SellerProfile;
@@ -451,6 +466,7 @@ export type ProductResolvers<ContextType = any, ParentType extends ResolversPare
   createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  images?: Resolver<Array<ResolversTypes['ProductImage']>, ParentType, ContextType>;
   imagesUrl?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   price?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
@@ -468,6 +484,17 @@ export type ProductCategoryResolvers<ContextType = any, ParentType extends Resol
   productId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   products?: Resolver<Array<ResolversTypes['Product']>, ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type ProductImageResolvers<ContextType = any, ParentType extends ResolversParentTypes['ProductImage'] = ResolversParentTypes['ProductImage']> = {
+  bytes?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  format?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  height?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  publicId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  width?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -523,6 +550,7 @@ export type Resolvers<ContextType = any> = {
   Mutation?: MutationResolvers<ContextType>;
   Product?: ProductResolvers<ContextType>;
   ProductCategory?: ProductCategoryResolvers<ContextType>;
+  ProductImage?: ProductImageResolvers<ContextType>;
   ProductsPage?: ProductsPageResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   SellerProfile?: SellerProfileResolvers<ContextType>;

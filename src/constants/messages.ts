@@ -25,7 +25,9 @@ export const ERROR_MESSAGES = {
     },
     PRODUCT: {
         NOT_FOUND: 'Product not found',
-        UNAUTHORIZED: 'You are not authorized to perform this action'
+        UNAUTHORIZED: 'You are not authorized to perform this action',
+        IMAGES_DESTROY_FAILED: 'Something went wrong during images destroy operation.',
+        ALREADY_EXIST: 'Product already exist'
     },
     VALIDATION: {
         MISSING_FIELDS: 'Required fields are missing',

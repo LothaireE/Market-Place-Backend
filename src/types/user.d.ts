@@ -7,14 +7,14 @@ export type AuthorizedUser = { // payload of JWT token
 };
 
 export type JWTPayload = {
-    userId: string;
+    subject: string;
     username: string;
     source?: 'login' | 'refresh' | 'test';
     iat: number;
     exp: number;
 };
 
-export type UserType = {
+export type UserType = { // should replace with generated User from ORM
     id: string;
     username: string;
     email: string;

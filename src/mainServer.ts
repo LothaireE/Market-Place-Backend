@@ -39,7 +39,6 @@ export const Main = async () => {
         expressMiddleware(apolloServer, {
             context: async ({ req }): Promise<GraphQLContext> => {
                 const token = decodeAccessToken(req.headers.authorization);
-                // return { db, token };
                 return { db, token };
             }
         })
@@ -54,7 +53,6 @@ export const Main = async () => {
             `PostgreSQL connection successfully on port:${POSTGRES_PORT}`, MAIN_SERVER_LABEL
         );
         logging.log('------------------------------------------');
-        // console.log('client ===> ', client);
         client.release();
     } catch (error) {
         logging.log('------------------------------------------');

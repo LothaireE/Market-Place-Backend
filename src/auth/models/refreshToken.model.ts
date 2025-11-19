@@ -11,6 +11,13 @@ export class RefreshTokenModel {
         return db.delete(refreshTokens).where(eq(refreshTokens.token, token));
     }
 
+    static async update(token: string, newExpiresAt: Date) {
+        return db
+            .update(refreshTokens)
+            .set({ expiresAt: newExpiresAt })
+            .where(eq(refreshTokens.token, token));
+    }
+
     static async revokeAllForUser(userId: string) {
         return db.delete(refreshTokens).where(eq(refreshTokens.userId, userId));
     }
