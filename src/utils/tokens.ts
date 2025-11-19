@@ -1,38 +1,48 @@
 import jwt from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
 import { JWT_SECRET, REFRESH_TOKEN_SECRET } from '../config/config';
-import { TEST } from '../config/config';
-// import { AuthorizedUser } from '../types/user';
+import { TEST, PRODUCTION } from '../config/config';
 import { JWTPayload } from '../types/user';
+import { Response } from 'express';
 
+
+type AccessTokenPayload = {
+    subject: string;
+    username: string;
+    source: 'login' | 'refresh' | 'test';
+    email?: string;
+    role?: string;
+};
+
+type RefreshTokenPayload = {
+    subject: string;
+    username: string;
+    email?: string;
+    role?: string;
+};
 
 export function generateAccessToken(
-    userId: string,
-    username: string,
-    source: 'login' | 'refresh' | 'test'
+    payload: AccessTokenPayload
 ): string {
-    !TEST && logging.info(`source: ${source}`);
-    if (source === 'test')
-        jwt.sign({ userId, username, source }, JWT_SECRET, {
+    !TEST && logging.info(`source: ${payload.source}`);
+    if (payload.source === 'test')
+        jwt.sign(payload, JWT_SECRET, {
             expiresIn: '60min' // '1min'
         });
 
-    return jwt.sign({ userId, username, source }, JWT_SECRET, {
+    return jwt.sign(payload, JWT_SECRET, {
         expiresIn: '60min' // '15min'
     });
 }
 
-export function generateRefreshToken(userId: string, username: string): string {
-    return jwt.sign(
-        { userId, username, source: 'refresh' },
-        REFRESH_TOKEN_SECRET,
-        {
-            expiresIn: '7d'
-        }
-    );
+export function generateRefreshToken(payload:RefreshTokenPayload): string {
+    return jwt.sign({...payload, source: 'refresh' },REFRESH_TOKEN_SECRET,{
+            expiresIn: '30d'
+    });
 }
 
-export function verifyRefreshToken(refreshToken: string) {
-    return jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as JWTPayload;
+export function verifyRefreshToken(refreshToken: string) { // route "api/auth/me" it should be verifyAccessToken
+    return jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as RefreshTokenPayload & { source: string };
 }
 
 export function addDaysFromNow(days: number = 7) {
@@ -40,16 +50,41 @@ export function addDaysFromNow(days: number = 7) {
 }
 
 export function decodeAccessToken(authHeader?: string) {
-    // console.log('authHeader ===> ', authHeader);
     if (!authHeader) return null;
     try {
         const token = authHeader.split(' ')[1];
-        // console.log('token ===> ', token);
-        // const decoded = jwt.verify(token, JWT_SECRET) as AuthorizedUser;
+
         const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
-        console.log('decoded ===> ', decoded);
+
         return decoded;
     } catch {
         return null;
     }
+}
+
+export const newJti = () => randomUUID();
+
+export function setRefreshCookie(
+    res: Response, 
+    token: string, 
+    path: string = "/", 
+    name: string = 'refresh_token'
+) {
+    return res.cookie(name, token, {
+        httpOnly: true,
+        secure: PRODUCTION,
+        sameSite: "lax", //'strict',
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        path: path
+    })
+}
+
+
+export function clearRefreshCookie (res: Response, path: string = "/", name: string = 'refresh_token') {
+    return res.clearCookie(name, {
+        path: path,
+        secure: PRODUCTION,
+        sameSite: "lax",
+        httpOnly: true
+    });
 }

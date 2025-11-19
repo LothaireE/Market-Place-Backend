@@ -1,4 +1,5 @@
 import UserModel from '../models/user.model';
+import { RefreshTokenModel } from '../models/refreshToken.model';
 import { UserType } from '../../types/user';
 import bcrypt from 'bcrypt';
 import {
@@ -6,7 +7,6 @@ import {
     generateAccessToken,
     generateRefreshToken
 } from '../../utils/tokens';
-import { RefreshTokenModel } from '../models/refreshToken.model';
 
 type LoginProps = {
     email: string;
@@ -34,8 +34,10 @@ class AuthService {
         });
 
         if (!newUser) throw new Error('CREATE_FAILED');
+        let returnedUser = {...newUser};
+        returnedUser.id="Sending back the id is a bad practice, work solely with access and refresh tokens";
 
-        return newUser;
+        return returnedUser;
     }
 
     static async login(data: LoginProps) {
@@ -49,13 +51,13 @@ class AuthService {
 
         if (!passwordMatch) throw new Error('INVALID_CREDENTIALS');
 
-        const accessToken = generateAccessToken(
-            user.id,
-            user.username,
-            'login'
-        );
+        const accessToken = generateAccessToken({
+            subject: user.id,
+            username:user.username,
+            source:'login'
+        });
 
-        const refreshToken = generateRefreshToken(user.id, user.username);
+        const refreshToken = generateRefreshToken({ subject:user.id, username: user.username });
         const expiresAt = addDaysFromNow();
 
         await RefreshTokenModel.store(user.id, refreshToken, expiresAt);

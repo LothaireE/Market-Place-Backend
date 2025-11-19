@@ -20,7 +20,7 @@ export const queryResolvers = <QueryResolvers>{
             context.db.select().from(users),
 
         sellerProfile: (_:any, __: any, context: GraphQLContext) => {
-            const userId = context.token?.userId;
+            const userId = context.token?.subject;
             if (!userId) throw new GraphQLError('Unauthorized', {
                 extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
             });
@@ -95,7 +95,7 @@ export const queryResolvers = <QueryResolvers>{
             if (!context.token) throw new GraphQLError('Unauthorized', {
                 extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
             });
-            const userId = context.token?.userId;
+            const userId = context.token?.subject;
 
             return context.db.query.favorites.findMany({
                 where: eq(favorites.userId, userId)
@@ -108,6 +108,5 @@ export const queryResolvers = <QueryResolvers>{
             context.db.query.categories.findFirst({
                 where: eq(categories.id, args.id)
             })
-        
     }
 };
