@@ -6,17 +6,15 @@ A basic RESTful API built with **Node.js**, **Express**, and **TypeScript**.
 
 ## Basic routes setup :
 
--   **Main routes**: Only here to perform a quick healthcheck. Route
-    'healthcheck/details' is protected fro demonstration purpose and requires an
-    access token.Copy and use them as a starting point.
+-   **Main routes**: Here to manage Product creation and deletion as it is recommended to avoid uploading files through GraphQL entirely. Route
+    are protected and requires an
+    access token.
 -   **Auth routes**: Exposed through a separate authentication server
     (`authServer.ts`). Includes login/signup logic, validation(minimal
     middleware, improve it with a library of your choice, e.g. zod, joi, etc),
     password hashing, and JWT-based authentication with access and refresh
     tokens.
--   **Book routes**: Serve as an example of standard CRUD operations backed by
-    MongoDB using generic middlewares. Can be used as a template to define other
-    resource routes in a modular way.
+    
 
 ## Features
 
@@ -82,11 +80,34 @@ View the report:
 Copy `.env.example` to `.env` and configure:
 
 ```env
-SERVER_PORT=3000
+
+# Postgres
+POSTGRES_USER=
+POSTGRES_HOST=
+POSTGRES_PASSWORD=
+POSTGRES_DATABASE=
+POSTGRES_PORT=
+
+DATABASE_URL=
+
+#Server
+SERVER_PORT=8000
 SERVER_HOSTNAME=localhost
-AUTH_PORT=4000
-JWT_SECRET=your_secret
-REFRESH_TOKEN_SECRET=your_refresh_secret
+
+# Auth Server
+AUTH_SERVER_PORT=8100
+AUTH_SERVER_HOSTNAME=localhost
+
+# JWT
+JWT_SECRET=
+JWT_EXPIRATION=1h
+REFRESH_TOKEN_SECRET=
+
+# CLOUDINARY
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+CLOUDINARY_URL=
 ```
 
 ## JWT Authentication
