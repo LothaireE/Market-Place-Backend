@@ -137,7 +137,7 @@ class AuthController {
 
     static async logout(req: Request, res: Response) {
         const token = req.cookies?.refresh_token;
-        
+           
         if (token){
             try {
                 await RefreshTokenModel.revoke(token);
@@ -148,7 +148,7 @@ class AuthController {
         
         clearRefreshCookie(res)
         logging.info('User logged out', AUTH_SERVER_LABEL);
-        return res.status(204).json({ok: true});
+        return res.status(204).json({ok: true, message: 'User logged out'});
     }
 }
 

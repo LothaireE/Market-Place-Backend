@@ -69,7 +69,7 @@ export const products = pgTable('products', {
     price: integer('price').notNull(),
     size: varchar('size', { length: 50 }),
     color: varchar('color', { length: 50 }),
-    imagesUrl: text('image_url').array().notNull().default(sql`ARRAY[]::text[]`),
+    imagesJson: text('images_json').array().notNull().default(sql`ARRAY[]::text[]`),
     condition: conditionEnum('condition').notNull().default('GOOD'),
     sellerId: uuid('seller_id')
         .notNull()

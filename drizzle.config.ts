@@ -7,7 +7,7 @@ https://orm.drizzle.team/docs/kit-overview
 @package 
 drizzle 
 
-list of commands to execute to handle migrations
+list of commands to handle migrations
 
 npx drizzle-kit generate
 npx drizzle-kit migrate
