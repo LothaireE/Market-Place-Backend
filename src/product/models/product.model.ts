@@ -38,7 +38,6 @@ export class ProductModel {
     };
 
     static async delete (sellerId: string, productId: string) {
-        
         const result = await db
             .delete(products)
             .where(and(eq(products.id, productId), eq(products.sellerId, sellerId)))

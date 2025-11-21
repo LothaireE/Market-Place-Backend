@@ -32,7 +32,7 @@ type Product {
     price: Int!
     size: String
     color: String
-    imagesUrl: [String!]!
+    imagesJson: [String!]!
     condition: ProductCondition!
     createdAt: String!
     updatedAt: String!
@@ -79,7 +79,7 @@ input CreateProductInput {
     price: Int!
     size: String
     color: String
-    imagesUrl: [String!]!
+    imagesJson: [String!]!
     condition: ProductCondition!
     sellerId: ID
 }
@@ -90,7 +90,7 @@ input UpdateProductInput {
     description: String
     price: Int!
     size: String
-    imagesUrl: [String!]!
+    imagesJson: [String!]!
     condition: ProductCondition!
     sellerId: ID
 }

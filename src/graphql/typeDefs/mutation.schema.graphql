@@ -1,6 +1,4 @@
 type Mutation {
-    createProduct(newProduct: CreateProductInput!): Product!
-    updateProduct(productUpdates: UpdateProductInput!): Product!
     deleteSingleProduct(id: ID!): Product
     deleteAllProducts: [Product]
     createSellerProfile(newSellerProfile: SellerProfileInput!): SellerProfile!
