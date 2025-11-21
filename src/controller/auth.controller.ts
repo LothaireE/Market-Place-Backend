@@ -148,7 +148,7 @@ class AuthController {
         
         clearRefreshCookie(res)
         logging.info('User logged out', AUTH_SERVER_LABEL);
-        return res.status(204).json({ok: true, message: 'User logged out'});
+        return res.status(200).json({ok: true, message: 'User logged out'});
     }
 }
 

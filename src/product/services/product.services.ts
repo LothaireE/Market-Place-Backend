@@ -20,7 +20,7 @@ export class ProductService {
         
         const imagesBaseName = productData.name.trim().split(' ').join('_');
         
-        const images = uploads.map((u, idx) => (JSON.stringify({
+        const imagesToString = uploads.map((u, idx) => (JSON.stringify({
             publicId: u.public_id,
             url: u.secure_url,
             width: u.width,
@@ -36,7 +36,7 @@ export class ProductService {
             description: productData.description ?? null,
             price: productData.price,
             size: productData.size ?? null,
-            imagesUrl: images,
+            imagesJson: imagesToString,
             condition: productData.condition ?? "GOOD",
             sellerId: sellerProfileId, 
         };
@@ -51,7 +51,7 @@ export class ProductService {
 
         if (!toDestroy) throw new Error(ERROR_MESSAGES.PRODUCT.NOT_FOUND);
         
-        const imagesObj = toDestroy.imagesUrl.map((image)=> image && JSON.parse(image))
+        const imagesObj = toDestroy.imagesJson.map((image)=> image && JSON.parse(image))
 
         const remainingImg = await removeImagesFiles(imagesObj)
 

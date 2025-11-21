@@ -12,6 +12,6 @@ export const productResolvers = <ProductResolvers>{
                 where: eq(sellerProfiles.id, parent.sellerId)
             }),
         images: async (parent: Product) => 
-            parent.imagesUrl.map((image: string) => image && JSON.parse(image)) as ProductImage[] || []
+            parent.imagesJson.map((image: string) => image && JSON.parse(image)) as ProductImage[] || []
         }
 }

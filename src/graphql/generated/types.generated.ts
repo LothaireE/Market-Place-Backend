@@ -29,7 +29,7 @@ export type CreateProductInput = {
   color?: InputMaybe<Scalars['String']['input']>;
   condition: ProductCondition;
   description?: InputMaybe<Scalars['String']['input']>;
-  imagesUrl: Array<Scalars['String']['input']>;
+  imagesJson: Array<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   price: Scalars['Int']['input'];
   sellerId?: InputMaybe<Scalars['ID']['input']>;
@@ -55,7 +55,6 @@ export type Mutation = {
   addToFavorites?: Maybe<Favorite>;
   addToProductCategories: ProductCategory;
   createCategory: Category;
-  createProduct: Product;
   createSellerProfile: SellerProfile;
   deleteAllProducts?: Maybe<Array<Maybe<Product>>>;
   deleteCategory?: Maybe<Category>;
@@ -63,7 +62,6 @@ export type Mutation = {
   deleteSingleProduct?: Maybe<Product>;
   removeFromFavorites?: Maybe<Favorite>;
   removeFromProductCategories?: Maybe<ProductCategory>;
-  updateProduct: Product;
   updateSellerProfile: SellerProfile;
 };
 
@@ -81,11 +79,6 @@ export type MutationAddToProductCategoriesArgs = {
 
 export type MutationCreateCategoryArgs = {
   name: Scalars['String']['input'];
-};
-
-
-export type MutationCreateProductArgs = {
-  newProduct: CreateProductInput;
 };
 
 
@@ -119,11 +112,6 @@ export type MutationRemoveFromProductCategoriesArgs = {
 };
 
 
-export type MutationUpdateProductArgs = {
-  productUpdates: UpdateProductInput;
-};
-
-
 export type MutationUpdateSellerProfileArgs = {
   sellerProfileUpdates: UpdateSellerProfileInput;
 };
@@ -143,7 +131,7 @@ export type Product = {
   description?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   images: Array<ProductImage>;
-  imagesUrl: Array<Scalars['String']['output']>;
+  imagesJson: Array<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   price: Scalars['Int']['output'];
   sellerId: Scalars['ID']['output'];
@@ -272,7 +260,7 @@ export type UpdateProductInput = {
   condition: ProductCondition;
   description?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
-  imagesUrl: Array<Scalars['String']['input']>;
+  imagesJson: Array<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   price: Scalars['Int']['input'];
   sellerId?: InputMaybe<Scalars['ID']['input']>;
@@ -448,7 +436,6 @@ export type MutationResolvers<ContextType = any, ParentType extends ResolversPar
   addToFavorites?: Resolver<Maybe<ResolversTypes['Favorite']>, ParentType, ContextType, RequireFields<MutationAddToFavoritesArgs, 'favoriteInput'>>;
   addToProductCategories?: Resolver<ResolversTypes['ProductCategory'], ParentType, ContextType, RequireFields<MutationAddToProductCategoriesArgs, 'categoryId' | 'productId'>>;
   createCategory?: Resolver<ResolversTypes['Category'], ParentType, ContextType, RequireFields<MutationCreateCategoryArgs, 'name'>>;
-  createProduct?: Resolver<ResolversTypes['Product'], ParentType, ContextType, RequireFields<MutationCreateProductArgs, 'newProduct'>>;
   createSellerProfile?: Resolver<ResolversTypes['SellerProfile'], ParentType, ContextType, RequireFields<MutationCreateSellerProfileArgs, 'newSellerProfile'>>;
   deleteAllProducts?: Resolver<Maybe<Array<Maybe<ResolversTypes['Product']>>>, ParentType, ContextType>;
   deleteCategory?: Resolver<Maybe<ResolversTypes['Category']>, ParentType, ContextType, RequireFields<MutationDeleteCategoryArgs, 'id'>>;
@@ -456,7 +443,6 @@ export type MutationResolvers<ContextType = any, ParentType extends ResolversPar
   deleteSingleProduct?: Resolver<Maybe<ResolversTypes['Product']>, ParentType, ContextType, RequireFields<MutationDeleteSingleProductArgs, 'id'>>;
   removeFromFavorites?: Resolver<Maybe<ResolversTypes['Favorite']>, ParentType, ContextType, RequireFields<MutationRemoveFromFavoritesArgs, 'favoriteInput'>>;
   removeFromProductCategories?: Resolver<Maybe<ResolversTypes['ProductCategory']>, ParentType, ContextType, RequireFields<MutationRemoveFromProductCategoriesArgs, 'id'>>;
-  updateProduct?: Resolver<ResolversTypes['Product'], ParentType, ContextType, RequireFields<MutationUpdateProductArgs, 'productUpdates'>>;
   updateSellerProfile?: Resolver<ResolversTypes['SellerProfile'], ParentType, ContextType, RequireFields<MutationUpdateSellerProfileArgs, 'sellerProfileUpdates'>>;
 };
 
@@ -467,7 +453,7 @@ export type ProductResolvers<ContextType = any, ParentType extends ResolversPare
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   images?: Resolver<Array<ResolversTypes['ProductImage']>, ParentType, ContextType>;
-  imagesUrl?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  imagesJson?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   price?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   sellerId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
