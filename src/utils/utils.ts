@@ -7,7 +7,7 @@ import db from '../db/db';
 import { v2 as cloudinary, UploadApiResponse } from 'cloudinary'
 import { CLOUDINARY } from '../config/config';
 import { randomBytes } from 'crypto';
-import { ProductImage } from '../graphql/generated/types.generated';
+
 
 cloudinary.config({ 
   cloud_name: CLOUDINARY.CLOUD_NAME, 
@@ -22,6 +22,10 @@ const cloudinaryResponses = [
 
 export function firstElem<T>(array: T[]): T | undefined {
     return array[0];
+}
+
+export function shortId(len = 8) {
+  return randomBytes(len).toString('hex'); // 8 bytes = 16 char
 }
 
 export function lower(email: AnyPgColumn): SQL {
@@ -55,22 +59,21 @@ export function uploadImagesFiles(fileBuffer: Buffer, folder?: string): Promise<
     })
 }
 
-export async function removeImagesFiles (imagesObj: ProductImage[]): Promise<string[]> {
 
-    const imagesToDestroy = imagesObj.filter(img => Boolean(img.publicId));
+export async function deleteRemoteImages (publicIds: string[]): Promise<string[]> {
 
-    if (imagesToDestroy.length === 0) return [];
+    if (publicIds.length === 0) return [];
 
     const results = await Promise.all(
-        imagesToDestroy.map( async (img) => {
-            const cloudRes = await cloudinary.uploader.destroy(img.publicId!);
-            return { img, cloudRes }; // for each, retrieve both the img and cloudRes
+        publicIds.map( async (publicId) => {
+            const cloudRes = await cloudinary.uploader.destroy(publicId!);
+            return { publicId, cloudRes }; // for each, retrieve both the img and cloudRes
         })
     );
 
     return results
         .filter(({ cloudRes })=> !cloudinaryResponses.includes(cloudRes.result)) // "ok" or "not found"
-        .map(({img})=>img.publicId!) // <!> because publicId check was performed at first line(l.60)
+        .map(({publicId})=>publicId!) 
 }
 
 // not happy with the following method at the moment
@@ -84,6 +87,33 @@ export function deleteFolderFromCloudinary (folder: string): Promise<UploadApiRe
     })
 }
 
-export function shortId(len = 8) {
-  return randomBytes(len).toString('hex'); // 8 bytes = 16 char
+
+export function imagesToString (uploads:UploadApiResponse[],imagesBaseName: string, startIdx = 0 ) {  
+    return uploads.map((u, idx) => (JSON.stringify({
+                publicId: u.public_id,
+                url: u.secure_url,
+                width: u.width,
+                height: u.height,
+                bytes: u.bytes,
+                format: u.format,
+                name: `${imagesBaseName}_image_${startIdx+ idx + 1}`
+            })));
+}
+
+export function imagesJsonToPublicIds (imagesJson: string [] | null): string[] {
+    if (!imagesJson || imagesJson.length === 0) return [];
+
+    const publicIds: string[] = imagesJson
+        .filter(Boolean)
+        .map((imageStr)=>{
+            try {
+                const imageObj = JSON.parse(imageStr)
+                return imageObj.publicId as string || undefined;
+            } catch (error) {
+                return undefined;
+            }
+        })
+        .filter((publicId)=> publicId !== undefined) as string[];
+
+    return publicIds;
 }

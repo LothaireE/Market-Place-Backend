@@ -22,7 +22,7 @@ class ProductController {
             return res.status(200).json({
                 message: SUCCESS_MESSAGES.PRODUCT.CREATED,
                 timestamp: new Date().toISOString(),
-                newProduct: newProduct?? null
+                product: newProduct
             });
 
         } catch (error:any) {
@@ -50,7 +50,7 @@ class ProductController {
             return res.status(200).json({
                 message: SUCCESS_MESSAGES.PRODUCT.DELETED,
                 timestamp: new Date().toISOString(),
-                deletedProduct: result 
+                product: result 
             });
 
         } catch (error:any) {
@@ -64,6 +64,34 @@ class ProductController {
                 .status(500)
                 .json({ error: ERROR_MESSAGES.COMMON.INTERNAL_ERROR });
         }    
+    }
+
+    static async update(req: Request | any, res: Response) {
+        const token = decodeAccessToken(req.headers.authorization);
+
+        const sellerProfile = await isSeller(token as JWTPayload);
+        if (!sellerProfile) return res.status(403).json({ error: ERROR_MESSAGES.SELLER.NOT_FOUND });
+
+        try {
+            const result = await ProductService.updateProduct(sellerProfile.id, req.body, req.files)
+
+            return res.status(200).json({
+                message: SUCCESS_MESSAGES.PRODUCT.UPDATED,
+                timestamp: new Date().toISOString(),
+                product: result 
+            });
+
+        } catch (error:any) {
+            logging.error(error, MAIN_SERVER_LABEL);
+            if (error.message === 'PRODUCT_NOT_FOUND') {
+                return res
+                    .status(409)
+                    .json({ error: ERROR_MESSAGES.PRODUCT.NOT_FOUND});
+            }
+            return res
+                .status(500)
+                .json({ error: ERROR_MESSAGES.COMMON.INTERNAL_ERROR });
+        }
     }
 }
 
