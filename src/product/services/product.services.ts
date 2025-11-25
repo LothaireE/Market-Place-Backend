@@ -10,7 +10,6 @@ type UpdateValues = Partial<CreateProductInput> & {
     } 
 
 
-
 export class ProductService {
     
     static async createProduct(
@@ -49,9 +48,7 @@ export class ProductService {
         productUpdate: Partial<CreateProductInput> & { id: string, name: string, imagesToRemove?: string[] },
         files? : Express.Multer.File[] | [],
     ) {
-
         const product = await ProductModel.findWithSellerId(productUpdate.id, sellerId);
-
         if (!product) throw new Error(ERROR_MESSAGES.PRODUCT.NOT_FOUND);
 
         // const updateValues = { ...productUpdate, sellerId };
@@ -79,7 +76,6 @@ export class ProductService {
         
         if (files && files.length > 0) { // handling new uploads
             const existingName = productUpdate.name ?? (await ProductModel.getProductName(productUpdate.id));
-            // productUpdate.name = existingName as string;
             updateValues.name = existingName as string;
 
             const baseName = existingName.trim().split(" ").join("_");
@@ -105,12 +101,13 @@ export class ProductService {
     }
     
 
-    static async deleteProduct(sellerId: string, productId: string) {
+    static async deleteProduct(
+        sellerId: string, 
+        productId: string
+    ) {
         const product = await ProductModel.findWithSellerId(productId, sellerId)
-
        if (!product) throw new Error(ERROR_MESSAGES.PRODUCT.NOT_FOUND);
          
-
         const publicIds = imagesJsonToPublicIds(product.imagesJson)
 
         const deletions = await deleteRemoteImages(publicIds) // removing images from cloudinary
