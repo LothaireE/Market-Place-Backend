@@ -50,8 +50,6 @@ export class ProductService {
     ) {
         const product = await ProductModel.findWithSellerId(productUpdate.id, sellerId);
         if (!product) throw new Error(ERROR_MESSAGES.PRODUCT.NOT_FOUND);
-
-        // const updateValues = { ...productUpdate, sellerId };
         const updateValues : UpdateValues = { ...productUpdate, sellerId };
 
         const imagesToRemoveFromDb : string[] =[];  // array of images publicIds

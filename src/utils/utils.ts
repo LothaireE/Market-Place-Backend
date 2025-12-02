@@ -60,12 +60,14 @@ export function uploadImagesFiles(fileBuffer: Buffer, folder?: string): Promise<
 }
 
 
-export async function deleteRemoteImages (publicIds: string[]): Promise<string[]> {
+export async function deleteRemoteImages (publicIds: string | string[] ): Promise<string[]> {
 
-    if (publicIds.length === 0) return [];
+    const publicIdsArr = Array.isArray(publicIds) ? publicIds : [publicIds];
+
+    if (publicIdsArr.length === 0) return [];
 
     const results = await Promise.all(
-        publicIds.map( async (publicId) => {
+        publicIdsArr.map( async (publicId) => {
             const cloudRes = await cloudinary.uploader.destroy(publicId!);
             return { publicId, cloudRes }; // for each, retrieve both the img and cloudRes
         })
