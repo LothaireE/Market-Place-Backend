@@ -1,7 +1,6 @@
 import { SQL, sql } from 'drizzle-orm';
 import { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { eq } from 'drizzle-orm';
-import { JWTPayload } from '../types/user';
 import { sellerProfiles } from '../db/schema';
 import db from '../db/db';
 import { v2 as cloudinary, UploadApiResponse } from 'cloudinary'
@@ -32,14 +31,11 @@ export function lower(email: AnyPgColumn): SQL {
   return sql`lower(${email})`;
 }
 
-export async function isSeller(token:JWTPayload) {
-
-    const { subject } = token
-
-    if (!subject) return null;
+export async function isSeller(sellerId:string) {
+    if (!sellerId) return null;
 
     const sellerProfile = await db.query.sellerProfiles.findFirst({
-        where: eq(sellerProfiles.userId, subject)
+        where: eq(sellerProfiles.userId, sellerId)
     })
 
     return sellerProfile ?? null;

@@ -218,11 +218,6 @@ export type QueryProductsArgs = {
   pagination: PaginationInput;
 };
 
-
-export type QueryUserArgs = {
-  id: Scalars['ID']['input'];
-};
-
 export type SellerProfile = {
   __typename?: 'SellerProfile';
   bio?: Maybe<Scalars['String']['output']>;
@@ -501,7 +496,7 @@ export type QueryResolvers<ContextType = any, ParentType extends ResolversParent
   sellerProducts?: Resolver<Array<ResolversTypes['Product']>, ParentType, ContextType>;
   sellerProfile?: Resolver<Maybe<ResolversTypes['SellerProfile']>, ParentType, ContextType>;
   sellerProfiles?: Resolver<Array<ResolversTypes['SellerProfile']>, ParentType, ContextType>;
-  user?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<QueryUserArgs, 'id'>>;
+  user?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   users?: Resolver<Array<ResolversTypes['User']>, ParentType, ContextType>;
 };
 

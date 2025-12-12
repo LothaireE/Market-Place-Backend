@@ -10,7 +10,6 @@ import { eq, and } from 'drizzle-orm';
 import { GraphQLContext } from '../../types/context.type';
 import { ERROR_MESSAGES } from '../../constants/messages';
 import { GraphQLError } from 'graphql';
-import { JWTPayload } from '../../types/user';
 import { isSeller } from '../../utils/utils';
 import { notFound } from '../errors';
 
@@ -27,7 +26,7 @@ export const mutationResolvers = <MutationResolvers>{
                 extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.UNAUTHORIZED }
             });
 
-            const seller = await isSeller(token as JWTPayload);
+            const seller = await isSeller(token.subject);
             if (!seller) throw new GraphQLError('Forbidden', {
                 extensions: { code: 'FORBIDDEN', error: ERROR_MESSAGES.SELLER.NOT_FOUND }
             });

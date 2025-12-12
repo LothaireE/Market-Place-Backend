@@ -23,7 +23,7 @@ type SignupProps = {
 
 class AuthService {
     static async signup(data: SignupProps): Promise<UserType> {
-        const emailExist = await UserModel.findOne(data.email);
+        const emailExist = await UserModel.findByEmail(data.email);
 
         if (emailExist) throw new Error('EMAIL_ALREADY_EXIST');
 
@@ -43,7 +43,7 @@ class AuthService {
     static async login(data: LoginProps) {
         const { email, password } = data;
 
-        const user = await UserModel.findOne(email);
+        const user = await UserModel.findByEmail(email);
 
         if (!user) throw new Error('INVALID_CREDENTIALS');
 

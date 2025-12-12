@@ -11,10 +11,15 @@ import { isSeller } from '../../utils/utils';
 
 export const queryResolvers = <QueryResolvers>{
     Query: {
-        user: (_: any, args: { id: string }, context: GraphQLContext) => 
-            context.db.query.users.findFirst({
-                where: eq(users.id, args.id)
-            }),
+        user: (_: any, __: any, context: GraphQLContext) => {
+            const userId = context.token?.subject;
+            if (!userId) throw new GraphQLError('Unauthorized', {
+                extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
+            });
+            return context.db.query.users.findFirst({
+                where: eq(users.id, userId)
+            })
+        },
 
         users: (_: any, __: any, context: GraphQLContext) =>
             context.db.select().from(users),
@@ -82,7 +87,7 @@ export const queryResolvers = <QueryResolvers>{
             if (!context.token) throw new GraphQLError('Unauthorized', {
                 extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
             });
-            const seller = await isSeller(context.token);
+            const seller = await isSeller(context.token.subject);
             if (!seller) throw new GraphQLError('Forbidden', {
                 extensions: { code: 'FORBIDDEN', error: ERROR_MESSAGES.SELLER.NOT_FOUND }
             })

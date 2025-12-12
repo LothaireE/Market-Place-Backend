@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { MAIN_SERVER_LABEL } from '../config/config';
 import {  isSeller } from '../utils/utils';
-import { JWTPayload } from '../types/user';
 import { decodeAccessToken } from '../utils/tokens';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants/messages';
 import { ProductService } from '../product/services/product.services';
@@ -12,8 +11,9 @@ import { ProductService } from '../product/services/product.services';
 class ProductController {
     static async create(req: Request | any, res: Response) {
         const token = decodeAccessToken(req.headers.authorization);
+        if (!token) return res.status(403).json({ error: ERROR_MESSAGES.AUTH.MISSING_HEADER });
 
-        const sellerProfile = await isSeller(token as JWTPayload);
+        const sellerProfile = await isSeller(token?.subject);
         if (!sellerProfile) return res.status(403).json({ error: ERROR_MESSAGES.SELLER.NOT_FOUND });
 
         try {
@@ -40,8 +40,9 @@ class ProductController {
     
     static async delete(req: Request | any, res: Response) {
         const token = decodeAccessToken(req.headers.authorization);
+        if (!token) return res.status(403).json({ error: ERROR_MESSAGES.AUTH.MISSING_HEADER });
 
-        const sellerProfile = await isSeller(token as JWTPayload);
+        const sellerProfile = await isSeller(token?.subject);
         if (!sellerProfile) return res.status(403).json({ error: ERROR_MESSAGES.SELLER.NOT_FOUND });
 
         try {
@@ -68,8 +69,9 @@ class ProductController {
 
     static async update(req: Request | any, res: Response) {
         const token = decodeAccessToken(req.headers.authorization);
+        if (!token) return res.status(403).json({ error: ERROR_MESSAGES.AUTH.MISSING_HEADER });
 
-        const sellerProfile = await isSeller(token as JWTPayload);
+        const sellerProfile = await isSeller(token.subject);
         if (!sellerProfile) return res.status(403).json({ error: ERROR_MESSAGES.SELLER.NOT_FOUND });
 
         try {
