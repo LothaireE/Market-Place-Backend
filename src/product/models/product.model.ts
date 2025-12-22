@@ -3,8 +3,7 @@ import db from "../../db/db";
 import { CreateProductInput, Product, UpdateProductInput } from "../../graphql/generated/types.generated";
 import { products } from "../../db/schema";
 import { ERROR_MESSAGES } from "../../constants/messages";
-import { firstElem } from "../../utils/utils";
-
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 export class ProductModel {
     static findOne = async function (
@@ -38,10 +37,12 @@ export class ProductModel {
     }
 
     static async create (
-        newProduct: CreateProductInput & { sellerId: string }
+        newProduct: CreateProductInput & { sellerId: string },
+        transaction: PostgresJsDatabase<any> = db
     ): Promise<Product | undefined> {
 
-        const [createdProduct] = await db
+        // const [createdProduct] = await db
+        const [createdProduct] = await transaction
             .insert(products)
             .values(newProduct)
             .returning();
@@ -56,7 +57,7 @@ export class ProductModel {
         
         if (result.length === 0) throw new Error(ERROR_MESSAGES.PRODUCT.NOT_FOUND);
 
-        return firstElem(result);
+        return result[0];
     }
 
     static async update (

@@ -2,7 +2,8 @@ import { ERROR_MESSAGES } from "../../constants/messages";
 import { CreateProductInput } from "../../graphql/generated/types.generated";
 import { deleteRemoteImages, shortId, uploadImagesFiles, imagesToString, imagesJsonToPublicIds } from "../../utils/utils";
 import { ProductModel } from "../models/product.model";
-
+import db from "../../db/db";
+import { productCategories } from "../../db/schema";
 
 type UpdateValues = Partial<CreateProductInput> & {
       id: string;
@@ -16,6 +17,7 @@ export class ProductService {
         sellerProfileId: string,
         productData: CreateProductInput,
         files : Express.Multer.File[] | [],
+        //  context: GraphQLContext I could have also use this form
     ) {
 
         const folderName = productData.name.trim().split(' ').join('_') + "_" + shortId() // I should store the folder name in db (fender_stratocaster_ab12cd34)
@@ -23,7 +25,8 @@ export class ProductService {
         const uploads = await Promise.all(files.map((file) => 
             uploadImagesFiles(file.buffer, folderName)));
 
-        
+        const { categoryIds = [], ...productValues } = productData;
+
         const imagesBaseName = productData.name.trim().split(' ').join('_');
         
         productData.imagesJson = imagesToString(uploads, imagesBaseName)
@@ -37,10 +40,22 @@ export class ProductService {
             condition: productData.condition ?? "GOOD",
             sellerId: sellerProfileId, 
         };
+        return await db.transaction(async(tx)=> {
+            const result = await ProductModel.create(newProductValues);
+            if (!result) throw new Error("Product creation failed.")
 
-        const result = await ProductModel.create(newProductValues);
+            if (categoryIds && categoryIds?.length> 0) {
+                await tx.insert(productCategories).values(
+                    categoryIds?.map((categoryId)=>({
+                        productId: result.id,
+                        categoryId
+                    }))
+                )
+             
+            }
 
-        return result
+            return result
+        })
     }
 
     static async updateProduct(

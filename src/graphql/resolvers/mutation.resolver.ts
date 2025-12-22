@@ -5,7 +5,6 @@
     FavoritesInput,
 } from '../generated/types.generated';
 import { products, sellerProfiles, favorites, categories, productCategories } from '../../db/schema';
-import { firstElem } from '../../utils/utils';
 import { eq, and } from 'drizzle-orm';
 import { GraphQLContext } from '../../types/context.type';
 import { ERROR_MESSAGES } from '../../constants/messages';
@@ -38,7 +37,7 @@ export const mutationResolvers = <MutationResolvers>{
             
             if (result.length === 0) throw notFound(ERROR_MESSAGES.PRODUCT.NOT_FOUND);
 
-            return firstElem(result);
+            return result[0];
         },
 
         deleteAllProducts: async (
@@ -52,7 +51,7 @@ export const mutationResolvers = <MutationResolvers>{
             const result = await context.db
                 .delete(products)
                 .returning();
-            return firstElem(result);
+            return result[0];
         },
 
         createSellerProfile: async (
@@ -64,7 +63,7 @@ export const mutationResolvers = <MutationResolvers>{
                 .insert(sellerProfiles)
                 .values(args.newSellerProfile)
                 .returning();
-            return firstElem(result);
+            return result[0];
         },
 
         updateSellerProfile: async (
@@ -77,7 +76,7 @@ export const mutationResolvers = <MutationResolvers>{
                 .set(args.sellerProfileUpdates)
                 .where(eq(sellerProfiles.id, args.sellerProfileUpdates.id))
                 .returning();
-            return firstElem(result);
+            return result[0];
         },
         deleteSellerProfile: async (
             _: any,
@@ -90,32 +89,97 @@ export const mutationResolvers = <MutationResolvers>{
                 .delete(sellerProfiles)
                 .where(eq(sellerProfiles.id, args.id))
                 .returning();
-            return firstElem(result);
+            return result[0];
         },
 
         addToFavorites: async (
             _: any,
-            args: { favoriteInput: FavoritesInput },
+            args: { productId: string },
             context: GraphQLContext
         ) => {
-            const result = await context.db
-                .insert(favorites)
-                .values(args.favoriteInput) // 
-                .returning();
-            return firstElem(result);
+            console.log('ADD TO FAVORITE QUERY', );
+            if (!context.token) throw new GraphQLError('Unauthorized', {
+                extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
+            });
+            const userId = context.token?.subject;
+            try {
+                const result = await context.db
+                    .insert(favorites)
+                    .values({ userId, productId: args.productId })
+                    .returning();
+                return result[0];
+            } catch (err: any) {
+                console.error('addToFavorites error:', {
+                    message: err.message,
+                    code: err.code,
+                    detail: err.detail,
+                    stack: err.stack
+                });
+                throw new GraphQLError('Failed to add favorite', {
+                    extensions: { code: 'INTERNAL_SERVER_ERROR', error: err.message }
+                });
+            }
+
+            // const result = await context.db
+            //     .insert(favorites)
+            //     .values({userId, productId:args.productId}) // 
+            //     .returning();
+            // return result[0];
         },
         
         removeFromFavorites: async (
             _: any,
-            args: { userId: string, productId: string},
+            args: { productId: string},
             context: GraphQLContext
         ) => {
-            const result = await context.db
+            console.log('REMOVE FROM FAVORITE QUERY', );
+
+            if (!context.token) throw new GraphQLError('Unauthorized', {
+                extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
+            });
+            const userId = context.token?.subject;
+            try {
+                            const result = await context.db
                 .delete(favorites)
-                .where(and (eq(favorites.userId, args.userId), eq(favorites.productId, args.productId)))
+                .where(and (eq(favorites.userId, userId), eq(favorites.productId, args.productId)))
                 .returning();
-            return firstElem(result);
+            return result[0];
+            } catch (err : any) {
+                console.error('addToFavorites error:', {
+                    message: err.message,
+                    code: err.code,
+                    detail: err.detail,
+                    stack: err.stack
+                });
+                throw new GraphQLError('Failed to add favorite', {
+                    extensions: { code: 'INTERNAL_SERVER_ERROR', error: err.message }
+                });
+            }
+            // const result = await context.db
+            //     .delete(favorites)
+            //     .where(and (eq(favorites.userId, userId), eq(favorites.productId, args.productId)))
+            //     .returning();
+            // return result[0];
         },
+
+        // clearFavorites: async (
+        //     _: any,
+        //     __: any,
+        //     context: GraphQLContext
+        // )=>{
+
+        //     if (!context.token) throw new GraphQLError('Unauthorized', {
+        //         extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
+        //     });
+
+        //     const userId = context.token?.subject;
+
+        //     const result = await context.db
+        //         .delete(favorites)
+        //         .where(eq(favorites.userId, userId))
+        //         .returning();
+        //     return result[0];
+        // },
 
         createCategory: async (
             _: any,
@@ -126,7 +190,7 @@ export const mutationResolvers = <MutationResolvers>{
                 .insert(categories)
                 .values({ name: args.name })
                 .returning();
-            return firstElem(result);
+            return result[0];
         },
         
         deleteCategory: async (
@@ -138,7 +202,7 @@ export const mutationResolvers = <MutationResolvers>{
                 .delete(categories)
                 .where(eq(categories.id, args.id))
                 .returning();
-            return firstElem(result);
+            return result[0];
         },
 
         addToProductCategories: async (
@@ -150,7 +214,7 @@ export const mutationResolvers = <MutationResolvers>{
                 .insert(productCategories)
                 .values({ productId: args.productId, categoryId: args.categoryId })
                 .returning();
-            return firstElem(result);
+            return result[0];
         },
         removeFromProductCategories: async (
             _: any,
@@ -161,7 +225,7 @@ export const mutationResolvers = <MutationResolvers>{
                 .delete(productCategories)
                 .where(eq(productCategories.productId, args.id))
                 .returning();
-            return firstElem(result);
+            return result[0];
         }
     }
 };

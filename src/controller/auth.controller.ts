@@ -12,6 +12,7 @@ import { AUTH_SERVER_LABEL } from '../config/config';
 import AuthService from '../auth/services/auth.services';
 import { RefreshTokenModel } from '../auth/models/refreshToken.model';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants/messages';
+import UserModel from '../auth/models/user.model';
 
 
 export const toPublicUser = (user: UserType) => ({
@@ -125,9 +126,12 @@ class AuthController {
 
             setRefreshCookie(res, newRefreshToken);
 
+            const user = await UserModel.findById(payload.subject)
+
             return res.status(201).json({
                 message: SUCCESS_MESSAGES.AUTH.TOKEN_REFRESHED,
                 accessToken: newAccessToken,
+                user
             });
         } catch (error) {
             logging.error(error, AUTH_SERVER_LABEL);

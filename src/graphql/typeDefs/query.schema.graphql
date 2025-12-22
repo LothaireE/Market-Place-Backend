@@ -6,9 +6,9 @@ type Query {
     product(id: ID!): Product
     products(
         filter: ProductFilterInput
-        pagination: PaginationInput!
+        pagination: PaginationInput
     ): ProductsPage!
-    sellerProducts: [Product!]!
+    sellerProducts(pagination: PaginationInput): [Product!]!
     favorites: [Favorite!]!
     categories: [Category!]!
     category(id: ID!): Category
