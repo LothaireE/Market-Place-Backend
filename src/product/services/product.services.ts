@@ -4,6 +4,7 @@ import { deleteRemoteImages, shortId, uploadImagesFiles, imagesToString, imagesJ
 import { ProductModel } from "../models/product.model";
 import db from "../../db/db";
 import { productCategories } from "../../db/schema";
+import { eq } from "drizzle-orm";
 
 type UpdateValues = Partial<CreateProductInput> & {
       id: string;
@@ -25,7 +26,15 @@ export class ProductService {
         const uploads = await Promise.all(files.map((file) => 
             uploadImagesFiles(file.buffer, folderName)));
 
-        const { categoryIds = [], ...productValues } = productData;
+        // const { categoryIds = [], ...productValues } = productData;
+        const { categoryIds = [] } = productData;
+
+        // force categoryIds into an array as formdata will send a single string if only one category is selected
+        const categoryIdsArray : string[] = Array.isArray(categoryIds)
+                ? categoryIds
+                : categoryIds
+                ? [categoryIds]
+                : [];
 
         const imagesBaseName = productData.name.trim().split(' ').join('_');
         
@@ -40,18 +49,18 @@ export class ProductService {
             condition: productData.condition ?? "GOOD",
             sellerId: sellerProfileId, 
         };
+        
         return await db.transaction(async(tx)=> {
             const result = await ProductModel.create(newProductValues);
             if (!result) throw new Error("Product creation failed.")
 
-            if (categoryIds && categoryIds?.length> 0) {
+            if (categoryIdsArray && categoryIdsArray?.length> 0) {
                 await tx.insert(productCategories).values(
-                    categoryIds?.map((categoryId)=>({
+                    categoryIdsArray.map((categoryId)=>({
                         productId: result.id,
                         categoryId
                     }))
                 )
-             
             }
 
             return result
@@ -60,57 +69,81 @@ export class ProductService {
 
     static async updateProduct(
         sellerId: string,
-        productUpdate: Partial<CreateProductInput> & { id: string, name: string, imagesToRemove?: string[] },
+        productUpdate: Partial<CreateProductInput> & { id: string, name: string, imagesToRemove?: string[], categoryIds?: string | string[] },
         files? : Express.Multer.File[] | [],
     ) {
         const product = await ProductModel.findWithSellerId(productUpdate.id, sellerId);
         if (!product) throw new Error(ERROR_MESSAGES.PRODUCT.NOT_FOUND);
-        const updateValues : UpdateValues = { ...productUpdate, sellerId };
+       
+        const { categoryIds } = productUpdate;
+        const categoryIdsArray: string[] = Array.isArray(categoryIds)
+            ? categoryIds
+            : categoryIds
+            ? [categoryIds]
+            : [];
 
-        const imagesToRemoveFromDb : string[] =[];  // array of images publicIds
+        return await db.transaction(async(tx)=>{
+            const updateValues : UpdateValues = { ...productUpdate, sellerId };
 
-        if (productUpdate.imagesToRemove && productUpdate.imagesToRemove.length > 0) {  // removing images from cloudinary 
-            const deletions = await deleteRemoteImages(productUpdate.imagesToRemove);
+            const imagesToRemoveFromDb : string[] =[];  // array of images publicIds
 
-            if (deletions.length > 0) {
-                logging.error(`could not destroy following images: ${deletions}`)
-                throw new Error(ERROR_MESSAGES.PRODUCT.IMAGES_DESTROY_FAILED );
+            if (productUpdate.imagesToRemove && productUpdate.imagesToRemove.length > 0) {  // removing images from cloudinary 
+                const deletions = await deleteRemoteImages(productUpdate.imagesToRemove);
+
+                if (deletions.length > 0) {
+                    logging.error(`could not destroy following images: ${deletions}`)
+                    throw new Error(ERROR_MESSAGES.PRODUCT.IMAGES_DESTROY_FAILED );
+                }
+
+                imagesToRemoveFromDb.push(...productUpdate.imagesToRemove); // collect publicIds to remove from updateValues.imagesJson
             }
 
-            imagesToRemoveFromDb.push(...productUpdate.imagesToRemove); // collect publicIds to remove from updateValues.imagesJson
-        }
-
-        if (imagesToRemoveFromDb.length > 0) {  // updateValues.imagesJson without removals
-            updateValues.imagesJson = product.imagesJson?.filter(imgStr => { 
-                const imgObj = JSON.parse(imgStr);
-                return !imagesToRemoveFromDb.includes(imgObj.publicId);
-            });
-        }
-        
-        if (files && files.length > 0) { // handling new uploads
-            const existingName = productUpdate.name ?? (await ProductModel.getProductName(productUpdate.id));
-            updateValues.name = existingName as string;
-
-            const baseName = existingName.trim().split(" ").join("_");
-            const folderName = `${baseName}_${shortId()}`;
-
-            const uploads = await Promise.all(files.map((file) => 
-                uploadImagesFiles(file.buffer, folderName)));
-
-            const currentImagesJson = updateValues.imagesJson || product.imagesJson || [];
-
-            const currentPublicIds = imagesJsonToPublicIds(updateValues.imagesJson ?? product.imagesJson);
-
-            const startIdx = currentPublicIds.length;
+            if (imagesToRemoveFromDb.length > 0) {  // updateValues.imagesJson without removals
+                updateValues.imagesJson = product.imagesJson?.filter(imgStr => { 
+                    const imgObj = JSON.parse(imgStr);
+                    return !imagesToRemoveFromDb.includes(imgObj.publicId);
+                });
+            }
             
-            const newImagesJson = imagesToString(uploads, baseName, startIdx);
+            if (files && files.length > 0) { // handling new uploads
+                const existingName = productUpdate.name ?? (await ProductModel.getProductName(productUpdate.id));
+                updateValues.name = existingName as string;
 
-            updateValues.imagesJson = [ ...currentImagesJson, ...newImagesJson ];
-        }
+                const baseName = existingName.trim().split(" ").join("_");
+                const folderName = `${baseName}_${shortId()}`;
 
-        const result = await ProductModel.update(updateValues)
+                const uploads = await Promise.all(files.map((file) => 
+                    uploadImagesFiles(file.buffer, folderName)));
 
-        return result;
+                const currentImagesJson = updateValues.imagesJson || product.imagesJson || [];
+
+                const currentPublicIds = imagesJsonToPublicIds(updateValues.imagesJson ?? product.imagesJson);
+
+                const startIdx = currentPublicIds.length;
+                
+                const newImagesJson = imagesToString(uploads, baseName, startIdx);
+
+                updateValues.imagesJson = [ ...currentImagesJson, ...newImagesJson ];
+            }
+
+            const result = await ProductModel.update(updateValues)
+
+            if (categoryIds !== undefined) {
+                await tx.delete(productCategories).where( // 1 erase all existing categories from product
+                    eq(productCategories.productId, productUpdate.id)
+                )
+                
+                if (categoryIdsArray.length > 0) { // 2 insert new 
+                    await tx.insert(productCategories).values(
+                        categoryIdsArray.map((categoryId)=>({
+                            productId: productUpdate.id,
+                            categoryId
+                        }))
+                    )
+                }
+            }
+            return result
+        })
     }
     
 

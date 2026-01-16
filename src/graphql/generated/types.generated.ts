@@ -1,4 +1,4 @@
-import { GraphQLResolveInfo } from 'graphql';
+import { GraphQLResolveInfo, GraphQLScalarType, GraphQLScalarTypeConfig } from 'graphql';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -14,6 +14,7 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
+  Date: { input: any; output: any; }
 };
 
 export type Category = {
@@ -129,7 +130,7 @@ export type Product = {
   categories?: Maybe<Array<Category>>;
   color?: Maybe<Scalars['String']['output']>;
   condition: ProductCondition;
-  createdAt: Scalars['String']['output'];
+  createdAt: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   images: Array<ProductImage>;
@@ -139,7 +140,7 @@ export type Product = {
   sellerId: Scalars['ID']['output'];
   sellerProfile: SellerProfile;
   size?: Maybe<Scalars['String']['output']>;
-  updatedAt: Scalars['String']['output'];
+  updatedAt: Scalars['Date']['output'];
 };
 
 export type ProductCategory = {
@@ -367,6 +368,7 @@ export type ResolversTypes = {
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   Category: ResolverTypeWrapper<Category>;
   CreateProductInput: CreateProductInput;
+  Date: ResolverTypeWrapper<Scalars['Date']['output']>;
   Favorite: ResolverTypeWrapper<Favorite>;
   FavoritesInput: FavoritesInput;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
@@ -396,6 +398,7 @@ export type ResolversParentTypes = {
   Boolean: Scalars['Boolean']['output'];
   Category: Category;
   CreateProductInput: CreateProductInput;
+  Date: Scalars['Date']['output'];
   Favorite: Favorite;
   FavoritesInput: FavoritesInput;
   ID: Scalars['ID']['output'];
@@ -425,6 +428,10 @@ export type CategoryResolvers<ContextType = any, ParentType extends ResolversPar
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
+export interface DateScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['Date'], any> {
+  name: 'Date';
+}
+
 export type FavoriteResolvers<ContextType = any, ParentType extends ResolversParentTypes['Favorite'] = ResolversParentTypes['Favorite']> = {
   createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
@@ -452,7 +459,7 @@ export type ProductResolvers<ContextType = any, ParentType extends ResolversPare
   categories?: Resolver<Maybe<Array<ResolversTypes['Category']>>, ParentType, ContextType>;
   color?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   condition?: Resolver<ResolversTypes['ProductCondition'], ParentType, ContextType>;
-  createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   images?: Resolver<Array<ResolversTypes['ProductImage']>, ParentType, ContextType>;
@@ -462,7 +469,7 @@ export type ProductResolvers<ContextType = any, ParentType extends ResolversPare
   sellerId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   sellerProfile?: Resolver<ResolversTypes['SellerProfile'], ParentType, ContextType>;
   size?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  updatedAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -535,6 +542,7 @@ export type UserResolvers<ContextType = any, ParentType extends ResolversParentT
 
 export type Resolvers<ContextType = any> = {
   Category?: CategoryResolvers<ContextType>;
+  Date?: GraphQLScalarType;
   Favorite?: FavoriteResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
   Product?: ProductResolvers<ContextType>;

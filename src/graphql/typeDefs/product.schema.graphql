@@ -14,7 +14,7 @@ enum ProductCondition {
     USED
     DAMAGED
 }
-
+scalar Date
 type ProductImage {
     publicId: String
     url: String
@@ -34,8 +34,8 @@ type Product {
     color: String
     imagesJson: [String!]!
     condition: ProductCondition!
-    createdAt: String!
-    updatedAt: String!
+    createdAt: Date!
+    updatedAt: Date!
     sellerId: ID!
     sellerProfile: SellerProfile!
     images: [ProductImage!]!
