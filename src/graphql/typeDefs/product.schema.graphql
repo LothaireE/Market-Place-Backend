@@ -111,7 +111,7 @@ input ProductFilterInput {
     minPrice: Int = 0
     maxPrice: Int = 10000
     size: String
-    condition: ProductCondition
+    condition: [ProductCondition!]
     category: String
     # category: Category
     color: String

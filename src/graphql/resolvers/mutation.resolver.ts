@@ -132,8 +132,7 @@ export const mutationResolvers = <MutationResolvers>{
             args: { productId: string},
             context: GraphQLContext
         ) => {
-            console.log('REMOVE FROM FAVORITE QUERY', );
-
+            console.log('REMOVE FROM FAVORITE MUTATION', );
             if (!context.token) throw new GraphQLError('Unauthorized', {
                 extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
             });

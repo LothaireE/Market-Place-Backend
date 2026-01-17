@@ -164,7 +164,7 @@ export enum ProductCondition {
 export type ProductFilterInput = {
   category?: InputMaybe<Scalars['String']['input']>;
   color?: InputMaybe<Scalars['String']['input']>;
-  condition?: InputMaybe<ProductCondition>;
+  condition?: InputMaybe<Array<ProductCondition>>;
   maxPrice?: InputMaybe<Scalars['Int']['input']>;
   minPrice?: InputMaybe<Scalars['Int']['input']>;
   q?: InputMaybe<Scalars['String']['input']>;

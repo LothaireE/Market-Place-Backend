@@ -57,13 +57,20 @@ export const queryResolvers = <QueryResolvers>{
                 )
                 : undefined;
 
+            
+            const conditionFilter = args.filter?.condition &&  args.filter?.condition.length > 0
+                ? inArray(
+                    products.condition,
+                    args.filter.condition
+                )
+                : undefined;
 
             const where = and(
                 categoryFilter,
+                conditionFilter,
                 args.filter?.minPrice !== undefined ? gte(products.price, args.filter.minPrice ?? MIN_PRICE) : undefined,
                 args.filter?.maxPrice !== undefined ? lte(products.price, args.filter.maxPrice ?? MAX_PRICE) : undefined,
                 args.filter?.size ? eq(products.size, args.filter.size) : undefined,
-                args.filter?.condition ? eq(products.condition, args.filter.condition) : undefined,
                 args.filter?.color ? eq(products.color, args.filter.color) : undefined,
                 args.filter?.search ? or(
                         ilike(products.name, `%${args.filter.search}%`),
