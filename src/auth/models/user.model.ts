@@ -4,11 +4,20 @@ import { users } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 
 class UserModel {
-    static findOne = async function (
+    static findByEmail = async function (
         email: string
     ): Promise<UserType | undefined> {
         const user = db.query.users.findFirst({
             where: eq(users.email, email)
+        });
+        return user ?? undefined;
+    };
+
+    static findById = async function (
+        id: string
+    ): Promise<UserType | undefined> {
+        const user = db.query.users.findFirst({
+            where: eq(users.id, id)
         });
         return user ?? undefined;
     };

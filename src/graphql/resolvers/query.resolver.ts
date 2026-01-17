@@ -1,9 +1,8 @@
 import { QueryResolvers, ProductFilterInput, PaginationInput } from '../generated/types.generated';
-import { users, products, sellerProfiles, favorites, categories  } from '../../db/schema/';
-import { eq, or, ilike, and, gte, lte, asc, desc, count } from 'drizzle-orm';
+import { users, products, sellerProfiles, favorites, categories, productCategories  } from '../../db/schema/';
+import { eq, or, ilike, and, gte, lte, asc, desc, count, inArray } from 'drizzle-orm';
 import { GraphQLContext } from '../../types/context.type';
 import { MAX_PRICE, MIN_PRICE, MAX_PAGE_SIZE } from '../../config/config';
-import { firstElem } from '../../utils/utils';
 import { GraphQLError } from 'graphql';
 import { ERROR_MESSAGES } from '../../constants/messages';
 import { isSeller } from '../../utils/utils';
@@ -11,10 +10,15 @@ import { isSeller } from '../../utils/utils';
 
 export const queryResolvers = <QueryResolvers>{
     Query: {
-        user: (_: any, args: { id: string }, context: GraphQLContext) => 
-            context.db.query.users.findFirst({
-                where: eq(users.id, args.id)
-            }),
+        user: (_: any, __: any, context: GraphQLContext) => {
+            const userId = context.token?.subject;
+            if (!userId) throw new GraphQLError('Unauthorized', {
+                extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
+            });
+            return context.db.query.users.findFirst({
+                where: eq(users.id, userId)
+            })
+        },
 
         users: (_: any, __: any, context: GraphQLContext) =>
             context.db.select().from(users),
@@ -38,24 +42,43 @@ export const queryResolvers = <QueryResolvers>{
                 where: eq(products.id, args.id)
             }),
 
-        products: async (_: any, args: {filter: ProductFilterInput, pagination: PaginationInput}, context: GraphQLContext) => {
-            const page = Math.max(1, args.pagination.page ?? 1);
-            const pageSize = Math.min(100, Math.max(1, args.pagination.pageSize ?? MAX_PAGE_SIZE));
+        products: async (_: any, args: {filter?: ProductFilterInput, pagination?: PaginationInput}, context: GraphQLContext) => {
+            const page = Math.max(1, args.pagination?.page ?? 1);
+            const pageSize = Math.min(100, Math.max(1, args.pagination?.pageSize ?? MAX_PAGE_SIZE));
             const offset = (page - 1) * pageSize;
 
+            const categoryFilter = args.filter?.category
+                ? inArray(
+                    products.id,
+                    context.db
+                        .select({ productId: productCategories.productId }) 
+                        .from(productCategories)
+                        .where(eq(productCategories.categoryId, args.filter.category))
+                )
+                : undefined;
+
+            
+            const conditionFilter = args.filter?.condition &&  args.filter?.condition.length > 0
+                ? inArray(
+                    products.condition,
+                    args.filter.condition
+                )
+                : undefined;
+
             const where = and(
-                args.filter?.category ? eq(categories.name, args.filter.category) : undefined, // à verifier
-                // args.filter?.category ? eq(products.category, args.filter.category) : undefined,
+                categoryFilter,
+                conditionFilter,
                 args.filter?.minPrice !== undefined ? gte(products.price, args.filter.minPrice ?? MIN_PRICE) : undefined,
                 args.filter?.maxPrice !== undefined ? lte(products.price, args.filter.maxPrice ?? MAX_PRICE) : undefined,
                 args.filter?.size ? eq(products.size, args.filter.size) : undefined,
-                args.filter?.condition ? eq(products.condition, args.filter.condition) : undefined,
                 args.filter?.color ? eq(products.color, args.filter.color) : undefined,
                 args.filter?.search ? or(
-                    ilike(products.name, `%${args.filter.search}%`),
-                    ilike(products.description, `%${args.filter.search}%`)
-                ) : undefined
-            );
+                        ilike(products.name, `%${args.filter.search}%`),
+                        ilike(products.description, `%${args.filter.search}%`)
+                    ) : undefined
+                    // args.filter?.q // client writes its own query
+            );      
+
 
             const order = args.pagination?.sortBy === 'DATE' ?
                 (args.pagination?.sortDirection === 'ASC' ? asc(products.createdAt): desc(products.createdAt))
@@ -67,28 +90,34 @@ export const queryResolvers = <QueryResolvers>{
                 .limit(pageSize)
                 .offset(offset);
 
-            const productsCount = await context.db // ça ici c'est le nombre total de products
-                .select({ count: count(products.id) }) // .select({ count: count(products.id) })
+            const productsCount = await context.db 
+                .select({ count: count(products.id) })
                 .from(products)
                 .where(where);
 
+            const totalProducts = Number(productsCount[0]?.count ?? 0)
          
-            const totalPages = Math.ceil((Number(firstElem(productsCount)?.count ?? 0)) / pageSize);
+            const totalPages = Math.ceil(totalProducts / pageSize);
 
-            return { items: productsQuery, totalPages: totalPages, totalProducts: Number(firstElem(productsCount)?.count ?? 0), currentPage: page  };
+            return { items: productsQuery, totalPages, totalProducts, currentPage: page  };
         },
 
-        sellerProducts: async (_: any, __:any, context: GraphQLContext) => {
+        sellerProducts: async (_: any, args:any, context: GraphQLContext) => {
             if (!context.token) throw new GraphQLError('Unauthorized', {
                 extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
             });
-            const seller = await isSeller(context.token);
+            const seller = await isSeller(context.token.subject);
             if (!seller) throw new GraphQLError('Forbidden', {
                 extensions: { code: 'FORBIDDEN', error: ERROR_MESSAGES.SELLER.NOT_FOUND }
             })
+            const order = args.pagination?.sortBy === 'PRICE' ?
+                (args.pagination?.sortDirection === 'ASC' ? asc(products.price): desc(products.price))
+                : (args.pagination?.sortDirection === 'ASC' ? asc(products.createdAt): desc(products.createdAt))
+
 
             return context.db.select().from(products)
-                .where(eq(products.sellerId, seller.id));
+                .where(eq(products.sellerId, seller.id)).orderBy(order);
+                
         },
 
         favorites: async (_:any, __:any, context: GraphQLContext) =>{
