@@ -1,9 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
+import { CLIENT_URL } from '../config/config';
 
 /**
  * Middleware to handle CORS requests and secure the API.
  * Determine what has access to the API and what to do with certain requests.
  */
+
+const ALLOWED_ORIGINS = new Set([
+  CLIENT_URL,
+]);
+
 export function corsHandler(req: Request, res: Response, next: NextFunction) {
     res.header('Access-Control-Allow-Origin', req.header('origin'));
     res.header(

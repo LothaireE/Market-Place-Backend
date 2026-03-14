@@ -30,13 +30,13 @@ export const Main = async () => {
     );
     if (!TEST) {
         try {
-            const client = await pool.connect();
+            const pgClient = await pool.connect();
             logging.log('------------------------------------------');
             logging.log(
                 `PostgreSQL connection successfully on port:${POSTGRES_PORT}`, AUTH_SERVER_LABEL
             );
             logging.log('------------------------------------------');
-            client.release();
+            pgClient.release();
         } catch (error) {
             logging.log(
                 '------------------------------------------',

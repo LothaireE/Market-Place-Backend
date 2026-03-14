@@ -1,0 +1,1 @@
+ALTER TABLE "order_items" ADD COLUMN "product_quantity" integer DEFAULT 1;

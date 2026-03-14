@@ -34,7 +34,7 @@ type SellerProfile {
 }
 
 input SellerProfileInput {
-    userId: ID!
+    # userId: ID!
     bio: String
     shopName: String
     payoutAccount: String
@@ -42,7 +42,7 @@ input SellerProfileInput {
 }
 
 input UpdateSellerProfileInput {
-    id: ID!
+    # id: ID!
     bio: String
     shopName: String
     payoutAccount: String

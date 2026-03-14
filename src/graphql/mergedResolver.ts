@@ -8,10 +8,13 @@ import { queryResolvers } from './resolvers/query.resolver';
 import { favoriteResolvers } from './resolvers/favorite.resolver';
 import { productCategoryResolvers } from './resolvers/productCategory.resolver';
 import { categoryResolvers } from './resolvers/category.resolver';
+import { orderItemResolvers, orderResolvers } from './resolvers/order.resolver';
 
 export const resolvers: Resolvers<GraphQLContext> = mergeResolvers([
     queryResolvers,
     favoriteResolvers,
+    orderResolvers,
+    orderItemResolvers,
     productCategoryResolvers,
     mutationResolvers,
     categoryResolvers,
