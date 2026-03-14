@@ -11,6 +11,7 @@ import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHt
 import { resolvers } from './graphql/mergedResolver';
 import { typeDefs } from './graphql/mergedTypeDefs';
 import { decodeAccessToken } from './utils/tokens';
+import { createLoaders } from './middlewares/loaders';
 
 export let httpServer: ReturnType<typeof http.createServer>;
 
@@ -39,7 +40,7 @@ export const Main = async () => {
         expressMiddleware(apolloServer, {
             context: async ({ req }): Promise<GraphQLContext> => {
                 const token = decodeAccessToken(req.headers.authorization);
-                return { db, token };
+                return { db, token, loaders: createLoaders(db) };
             }
         })
     );
@@ -47,13 +48,14 @@ export const Main = async () => {
     logging.log('Initializing connection to Postgres', MAIN_SERVER_LABEL);
     logging.log('------------------------------------------');
     try {
-        const client = await pool.connect();
+        const pgClient = await pool.connect();
         logging.log('------------------------------------------');
         logging.log(
             `PostgreSQL connection successfully on port:${POSTGRES_PORT}`, MAIN_SERVER_LABEL
         );
         logging.log('------------------------------------------');
-        client.release();
+        pgClient.release();
+
     } catch (error) {
         logging.log('------------------------------------------');
         logging.error(`PostgreSQL connection failed:${error}`);

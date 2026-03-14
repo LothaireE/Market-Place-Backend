@@ -1,0 +1,1 @@
+ALTER TABLE "payments" ALTER COLUMN "status" SET DEFAULT 'requires_action';

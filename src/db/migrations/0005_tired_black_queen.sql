@@ -1,0 +1,1 @@
+ALTER TABLE "products" ADD COLUMN "currency" "currency_enum" DEFAULT 'EUR' NOT NULL;

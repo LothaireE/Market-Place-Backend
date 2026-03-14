@@ -1,0 +1,1 @@
+CREATE INDEX "product_reserved_at_index" ON "products" USING btree ("reserved_at");

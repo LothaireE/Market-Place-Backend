@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
-import { Client, Pool } from 'pg';
+import { Pool } from 'pg';
+import Stripe from 'stripe';
 
 dotenv.config();
 
@@ -48,6 +49,8 @@ export const authServer = {
     SERVER_PORT: AUTH_SERVER_PORT
 };
 
+export const CLIENT_URL = process.env.CLIENT_URL || '';
+
 export const pool = new Pool({
     host: POSTGRES_HOST,
     user: POSTGRES_USER,
@@ -60,13 +63,6 @@ export const pool = new Pool({
     maxLifetimeSeconds: 60
 });
 
-export const client = new Client({
-    user: POSTGRES_USER,
-    password: POSTGRES_PASSWORD,
-    host: POSTGRES_HOST,
-    port: Number(POSTGRES_PORT) || 5433,
-    database: POSTGRES_DATABASE
-});
 
 export const MAX_PRICE = 10000;
 export const MIN_PRICE = 0;
@@ -109,3 +105,14 @@ export const CLOUDINARY = {
     API_SECRET : process.env.CLOUDINARY_API_SECRET || '',
     URL : process.env.CLOUDINARY_URL || ''
 }
+
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '')
+
+// export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY|| '', {
+//   maxNetworkRetries: 1,
+//   httpAgent: new ProxyAgent(process.env.http_proxy),
+//   timeout: 1000,
+//   host: 'api.example.com',
+//   port: 123,
+//   telemetry: true,
+// });

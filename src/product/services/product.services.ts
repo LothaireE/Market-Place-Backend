@@ -43,7 +43,7 @@ export class ProductService {
         const newProductValues = {
             name: productData.name,
             description: productData.description ?? null,
-            price: productData.price,
+            unitPrice: productData.unitPrice,
             size: productData.size ?? null,
             imagesJson: productData.imagesJson,
             condition: productData.condition ?? "GOOD",

@@ -14,7 +14,23 @@ enum ProductCondition {
     USED
     DAMAGED
 }
+
+enum OrderStatusEnum {
+    PENDING
+    PAID
+    FAILED
+    CANCELLED
+    COMPLETED
+}
+
+enum ProductStatusenum {
+    AVAILABLE
+    RESERVED
+    SOLD
+}
+
 scalar Date
+
 type ProductImage {
     publicId: String
     url: String
@@ -29,7 +45,8 @@ type Product {
     id: ID!
     name: String!
     description: String
-    price: Int!
+    unitPrice: Int!
+    currency: String!
     size: String
     color: String
     imagesJson: [String!]!
@@ -40,6 +57,7 @@ type Product {
     sellerProfile: SellerProfile!
     images: [ProductImage!]!
     categories: [Category!]
+    status: ProductStatusenum!
 }
 
 type Favorite {
@@ -47,7 +65,7 @@ type Favorite {
     userId: ID!
     productId: ID!
     product: Product!
-    createdAt: String!
+    createdAt: Date!
 }
 
 type ProductsPage {
@@ -60,8 +78,8 @@ type ProductsPage {
 type Category {
     id: ID!
     name: String!
-    createdAt: String!
-    updatedAt: String!
+    createdAt: Date!
+    updatedAt: Date
     products: [Product!]
 }
 
@@ -70,14 +88,14 @@ type ProductCategory {
     productId: ID!
     categoryId: ID!
     products: [Product!]
-    createdAt: String!
-    updatedAt: String
+    createdAt: Date!
+    updatedAt: Date
 }
 
 input CreateProductInput {
     name: String!
     description: String
-    price: Int!
+    unitPrice: Int!
     size: String
     color: String
     imagesJson: [String!]!
@@ -90,7 +108,7 @@ input UpdateProductInput {
     id: ID!
     name: String!
     description: String
-    price: Int!
+    unitPrice: Int!
     size: String
     imagesJson: [String!]!
     condition: ProductCondition!
@@ -107,6 +125,7 @@ input PaginationInput {
 }
 
 input ProductFilterInput {
+    ids: [ID!]
     q: String
     minPrice: Int = 0
     maxPrice: Int = 10000
@@ -121,4 +140,73 @@ input ProductFilterInput {
 input FavoritesInput {
     userId: ID!
     productId: ID!
+}
+
+enum FulfillmentMethod {
+    MEETUP
+    SHIPPING
+}
+
+type CreateOrderPayload {
+    orderId: ID!
+    fulfillmentMethod: FulfillmentMethod
+}
+
+type CancelOrderPayload {
+    orderId: ID!
+    orderStatus: String!
+    productIds: [String!]!
+}
+
+type CancelAllOrdersPayload {
+    cancelledOrders: Int
+    releasedProducts: Int
+    productIds: [String]
+}
+
+type OrderItem {
+    id: ID!
+    # buyerId: ID!
+    # sellerId: ID!
+    orderId: ID!
+    productId: ID!
+    unitPrice: String!
+    currency: String!
+    # fulfillmentMethod: FulfillmentMethod
+    # status: String!
+    createdAt: Date!
+    updatedAt: Date
+    product: Product
+}
+
+type OrdersPage {
+    items: [Order!]!
+    total: Int!
+}
+
+type ConfirmPaymentPayload {
+    orderIds: [ID!]!
+    orderStatus: OrderStatusEnum!
+    productIds: [ID!]!
+    productStatus: ProductStatusenum!
+}
+
+type Order {
+    id: ID!
+    buyerId: ID!
+    sellerId: ID!
+    status: String!
+    currency: String!
+    totalAmount: Int!
+    orderItems: [OrderItem!]!
+    sellerProfile: SellerProfile
+    fulfillmentMethod: FulfillmentMethod
+    createdAt: Date!
+    updatedAt: Date
+}
+
+type CreateCheckoutPayload {
+    orders: [Order!]!
+    stripePublicKey: String
+    clientSecret: String
 }

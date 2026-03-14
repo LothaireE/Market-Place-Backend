@@ -4,13 +4,15 @@
     UpdateSellerProfileInput,
     FavoritesInput,
 } from '../generated/types.generated';
-import { products, sellerProfiles, favorites, categories, productCategories } from '../../db/schema';
+import { products, sellerProfiles, favorites, categories, productCategories, fulfillmentMethodEnum } from '../../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { GraphQLContext } from '../../types/context.type';
 import { ERROR_MESSAGES } from '../../constants/messages';
 import { GraphQLError } from 'graphql';
 import { isSeller } from '../../utils/utils';
 import { notFound } from '../errors';
+import { OrderService } from '../../product/services/order.services';
+import UserModel from '../../auth/models/user.model';
 
 
 export const mutationResolvers = <MutationResolvers>{
@@ -59,9 +61,17 @@ export const mutationResolvers = <MutationResolvers>{
             args: { newSellerProfile: SellerProfileInput },
             context: GraphQLContext
         ) => {
+            if (!context.token) throw new GraphQLError('Unauthorized', {
+                extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
+            });
+
+            const userId = context.token?.subject;
+
+            const newSellerProfileValues = { ...args.newSellerProfile, userId };
+
             const result = await context.db
                 .insert(sellerProfiles)
-                .values(args.newSellerProfile)
+                .values(newSellerProfileValues)
                 .returning();
             return result[0];
         },
@@ -71,10 +81,26 @@ export const mutationResolvers = <MutationResolvers>{
             args: { sellerProfileUpdates: UpdateSellerProfileInput },
             context: GraphQLContext
         ) => {
+
+            if (!context.token) throw new GraphQLError('Unauthorized', {
+                extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
+            });
+
+            const userId = context.token?.subject;
+            const isSeller = await context.db.query.sellerProfiles.findFirst({
+                where: eq(sellerProfiles.userId, userId)
+            });
+
+            if (!isSeller) {
+                throw new GraphQLError('Seller profile not found', {
+                    extensions: { code: 'NOT_FOUND', error: ERROR_MESSAGES.SELLER.NOT_FOUND }
+                });
+            }
+
             const result = await context.db
                 .update(sellerProfiles)
                 .set(args.sellerProfileUpdates)
-                .where(eq(sellerProfiles.id, args.sellerProfileUpdates.id))
+                .where(eq(sellerProfiles.id, isSeller.id))
                 .returning();
             return result[0];
         },
@@ -138,11 +164,11 @@ export const mutationResolvers = <MutationResolvers>{
             });
             const userId = context.token?.subject;
             try {
-                            const result = await context.db
-                .delete(favorites)
-                .where(and (eq(favorites.userId, userId), eq(favorites.productId, args.productId)))
-                .returning();
-            return result[0];
+                const result = await context.db
+                    .delete(favorites)
+                    .where(and (eq(favorites.userId, userId), eq(favorites.productId, args.productId)))
+                    .returning();
+                return result[0];
             } catch (err : any) {
                 console.error('addToFavorites error:', {
                     message: err.message,
@@ -161,24 +187,6 @@ export const mutationResolvers = <MutationResolvers>{
             // return result[0];
         },
 
-        // clearFavorites: async (
-        //     _: any,
-        //     __: any,
-        //     context: GraphQLContext
-        // )=>{
-
-        //     if (!context.token) throw new GraphQLError('Unauthorized', {
-        //         extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
-        //     });
-
-        //     const userId = context.token?.subject;
-
-        //     const result = await context.db
-        //         .delete(favorites)
-        //         .where(eq(favorites.userId, userId))
-        //         .returning();
-        //     return result[0];
-        // },
 
         createCategory: async (
             _: any,
@@ -215,6 +223,7 @@ export const mutationResolvers = <MutationResolvers>{
                 .returning();
             return result[0];
         },
+
         removeFromProductCategories: async (
             _: any,
             args: { id: string },
@@ -225,6 +234,117 @@ export const mutationResolvers = <MutationResolvers>{
                 .where(eq(productCategories.productId, args.id))
                 .returning();
             return result[0];
+        },
+
+        cancelOrder: async (
+            _: any,
+            args: { orderId: string },
+            context: GraphQLContext
+        )=> {
+            if (!context.token) throw new GraphQLError('Unauthorized', {
+                extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
+            });
+            
+            const userId = context.token?.subject;
+
+            const result = await OrderService.cancelOrder(userId, args.orderId)
+
+            return result
+        },
+
+        cancelMultipleOrders: async (
+            _: any,
+            args: { orderIds: string[] },
+            context: GraphQLContext
+        )=> {
+
+            if (!context.token) throw new GraphQLError('Unauthorized', {
+                extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
+            });
+            
+            const userId = context.token?.subject;
+
+            const result = await OrderService.cancelMultipleOrders(userId, args.orderIds)
+
+            return result
+        },
+
+        cancelAllOrders: async (
+            _: any,
+            __: any,
+            ___: any 
+        )=> {
+
+            const result = await OrderService.cancelAllOrders()
+
+            return result
+        },
+
+        confirmPayment: async (
+            _: any,
+            args: { orderIds: string[], paymentIntentId: string},
+            context: GraphQLContext
+        )=> {
+            if (!context.token) throw new GraphQLError('Unauthorized', {
+                extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
+            });
+
+            const userId = context.token?.subject;
+
+            const result = await OrderService.confirmPayment(userId, args.orderIds, args.paymentIntentId)
+
+            return result
+        },
+
+        createCheckout: async (
+            _: any,
+            args: { productIds: string[], fulfillmentMethod: "MEETUP" | "SHIPPING" },
+            context: GraphQLContext
+        )=> {
+
+            if (!context.token) throw new GraphQLError('Unauthorized', {
+                extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
+            });
+
+            const userId = context.token?.subject;
+            
+            const result = await OrderService.createCheckout(
+                userId,
+                args.productIds,
+                args.fulfillmentMethod
+            )
+
+            const user = await UserModel.findById(userId)
+
+            const customerEmail = user?.email 
+
+            const amount = result.orders.reduce((sum: number, order: any)=> sum + order.totalAmount, 0)
+
+            const clientSecret = await OrderService.createPaymentIntent(amount, customerEmail)
+
+            return {orders: result.orders, stripePublicKey: process.env.STRIPE_PUBLIC_KEY, clientSecret}
         }
+
     }
 };
+
+
+
+        // clearFavorites: async (
+        //     _: any,
+        //     __: any,
+        //     context: GraphQLContext
+        // )=>{
+
+        //     if (!context.token) throw new GraphQLError('Unauthorized', {
+        //         extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
+        //     });
+
+        //     const userId = context.token?.subject;
+
+        //     const result = await context.db
+        //         .delete(favorites)
+        //         .where(eq(favorites.userId, userId))
+        //         .returning();
+        //     return result[0];
+        // },
