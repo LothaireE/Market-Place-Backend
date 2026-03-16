@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { TEST } from '../config/config';
 
 /**
  * Check any data in request body and compare it to a given schema to ensure the data is valid.
@@ -13,7 +14,7 @@ export function validate(schema: any) {
             validated.email = validated.email.toLowerCase();
             req.body = validated;
         } catch (error) {
-            logging.error('Validation error:', error);
+            !TEST && logging.error('Validation error:', error);
             return res.status(400).json(error);
         }
         next();

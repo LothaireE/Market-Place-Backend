@@ -42,7 +42,7 @@ class AuthController {
             });
         } catch (error: any) {
             if (error.message === 'INVALID_CREDENTIALS')
-                res.status(401).json({
+                return res.status(401).json({
                     error: ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS
                 });
             return res
