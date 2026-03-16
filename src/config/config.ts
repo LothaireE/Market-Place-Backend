@@ -26,14 +26,14 @@ export const DATABASE_URL = `postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@
 
 // Main Server Configuration
 export const MAIN_SERVER_LABEL = '| MAIN SERVER |';
-export const SERVER_PORT = process.env.SERVER_PORT
-    ? Number(process.env.SERVER_PORT)
+export const MAIN_SERVER_PORT = process.env.MAIN_SERVER_PORT
+    ? Number(process.env.MAIN_SERVER_PORT)
     : 3000;
-export const SERVER_HOSTNAME = process.env.SERVER_HOSTNAME || 'localhost';
+export const SERVER_HOSTNAME = process.env.MAIN_SERVER_HOSTNAME || 'localhost';
 
-export const server = {
+export const mainServer = {
     SERVER_HOSTNAME,
-    SERVER_PORT
+    SERVER_PORT: MAIN_SERVER_PORT
 };
 
 // Auth Server Configuration

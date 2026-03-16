@@ -1,7 +1,7 @@
 // import dotenv from 'dotenv'
 import db from './db/db';
 import './config/logging';
-import { server, pool, POSTGRES_PORT, NODE_ENV, MAIN_SERVER_LABEL } from './config/config';
+import { mainServer, pool, POSTGRES_PORT, NODE_ENV, MAIN_SERVER_LABEL } from './config/config';
 import http from 'http';
 import mainApplication from './mainApplication';
 import { GraphQLContext } from './types/context.type';
@@ -63,10 +63,10 @@ export const Main = async () => {
         process.exit(1);
     }
 
-    httpServer.listen(server.SERVER_PORT, () => {
+    httpServer.listen(mainServer.SERVER_PORT, () => {
         logging.log('------------------------------------------');
         logging.log(
-            `Server is running at http://${server.SERVER_HOSTNAME}:${server.SERVER_PORT}`, MAIN_SERVER_LABEL
+            `Server is running at http://${mainServer.SERVER_HOSTNAME}:${mainServer.SERVER_PORT}`, MAIN_SERVER_LABEL
         );
         logging.log('------------------------------------------');
     });
