@@ -8,7 +8,7 @@
         "skipLibCheck": true,
         "moduleResolution": "node16",
         "outDir": "build",
-        "types": ["jest"],
+        "types": ["node","jest"],
         "isolatedModules": true,
         "resolveJsonModule": true
     },
