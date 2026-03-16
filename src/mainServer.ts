@@ -1,7 +1,7 @@
 // import dotenv from 'dotenv'
 import db from './db/db';
 import './config/logging';
-import { mainServer, pool, POSTGRES_PORT, NODE_ENV, MAIN_SERVER_LABEL } from './config/config';
+import { mainServer, pool, NODE_ENV, MAIN_SERVER_LABEL } from './config/config';
 import http from 'http';
 import mainApplication from './mainApplication';
 import { GraphQLContext } from './types/context.type';
@@ -51,7 +51,7 @@ export const Main = async () => {
         const pgClient = await pool.connect();
         logging.log('------------------------------------------');
         logging.log(
-            `PostgreSQL connection successfully on port:${POSTGRES_PORT}`, MAIN_SERVER_LABEL
+            `PostgreSQL connection successful`, MAIN_SERVER_LABEL
         );
         logging.log('------------------------------------------');
         pgClient.release();
