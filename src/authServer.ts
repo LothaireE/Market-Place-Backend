@@ -73,4 +73,7 @@ export const Shutdown = (callback: any) =>
         callback();
     });
 
-Main();
+// Main();
+if (require.main === module) {
+    Main();
+}
