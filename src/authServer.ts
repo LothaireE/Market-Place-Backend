@@ -3,7 +3,6 @@ import {
     TEST,
     AUTH_SERVER_LABEL,
     NODE_ENV,
-    POSTGRES_PORT,
     pool,
     authServer
 } from './config/config';
@@ -33,7 +32,7 @@ export const Main = async () => {
             const pgClient = await pool.connect();
             logging.log('------------------------------------------');
             logging.log(
-                `PostgreSQL connection successfully on port:${POSTGRES_PORT}`, AUTH_SERVER_LABEL
+                `PostgreSQL connection successfull`, AUTH_SERVER_LABEL
             );
             logging.log('------------------------------------------');
             pgClient.release();

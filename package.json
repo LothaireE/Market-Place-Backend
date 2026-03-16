@@ -6,11 +6,12 @@
     "scripts": {
         "test": "NODE_ENV=test jest --config jest.config.ts --coverage",
         "build": "rm -rf build/ && tsc -p tsconfig.build.json",
-        "dev": "NODE_ENV=development nodemon --watch src --exec ts-node src/mainServer.ts",
+        "devMain": "NODE_ENV=development nodemon --watch src --exec ts-node src/mainServer.ts",
         "devAuth": "NODE_ENV=development nodemon --watch src --exec ts-node src/authServer.ts",
-        "start": "NODE_ENV=production node build/mainServer.js",
+        "dev:all": "concurrently \"npm:devMain\" \"npm:devAuth\"",
+        "startMain": "NODE_ENV=production node build/mainServer.js",
         "startAuth": "NODE_ENV=production node build/authServer.js",
-        "dev:all": "concurrently \"npm:dev\" \"npm:devAuth\"",
+        "start": "concurrently \"npm:startMain\" \"npm:startAuth\"",
         "codegen": "graphql-codegen --config codegen.config.ts"
     },
     "author": "Lothaire",

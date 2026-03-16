@@ -2,16 +2,12 @@
 
 
 import db  from "../../db/db";
-import { products, orders, sellerProfiles, orderItems, currencyEnum, users, payments } from "../../db/schema";
+import { products, orders, sellerProfiles, orderItems, payments } from "../../db/schema";
 import { eq, and, lt, inArray } from "drizzle-orm";
 import { Order, OrderItem } from "../../graphql/generated/types.generated";
-import { CLIENT_URL, server, stripe } from "../../config/config";
+import { stripe } from "../../config/config";
 
 
-type CreateOrderResult = {
-    orderId: string,
-    status: "PENDING"
-}
 
 type ConfirmPaymentResult = {
   orderIds: string[];
