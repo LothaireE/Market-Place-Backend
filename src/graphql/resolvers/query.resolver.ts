@@ -96,6 +96,7 @@ export const queryResolvers = <QueryResolvers>{
             return {items, total: Number(total)} 
 
         },
+        
         product: (_: any, args: { id: string }, context: GraphQLContext) => 
             context.db.query.products.findFirst({
                 where: eq(products.id, args.id)

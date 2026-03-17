@@ -1,0 +1,30 @@
+const mutationTypeDefs = `#graphql
+    extend type Mutation {
+        deleteSingleProduct(id: ID!): Product
+        deleteAllProducts: [Product]
+        createSellerProfile(newSellerProfile: SellerProfileInput!): SellerProfile!
+        updateSellerProfile(
+            sellerProfileUpdates: UpdateSellerProfileInput!
+        ): SellerProfile!
+        deleteSellerProfile(id: ID!): SellerProfile
+        addToFavorites(productId: String!): Favorite
+        removeFromFavorites(productId: String!): Favorite
+        createCategory(name: String!): Category!
+        deleteCategory(id: ID!): Category
+        addToProductCategories(productId: ID!, categoryId: ID!): ProductCategory!
+        removeFromProductCategories(id: ID!): ProductCategory
+        cancelOrder(orderId: ID!): CancelOrderPayload!
+        confirmPayment(
+            orderIds: [ID!]
+            paymentIntentId: String
+        ): ConfirmPaymentPayload
+        createCheckout(
+            productIds: [String!]!
+            fulfillmentMethod: FulfillmentMethod!
+        ): CreateCheckoutPayload!
+        cancelAllOrders: CancelAllOrdersPayload!
+        cancelMultipleOrders(orderIds: [ID!]): CancelAllOrdersPayload!
+    }
+`
+
+export default mutationTypeDefs;
