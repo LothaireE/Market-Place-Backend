@@ -1,8 +1,4 @@
-# enum VerificationStatus {
-#     PENDING = "pending",
-#     VERIFIED = "verified",
-#     REJECTED = "rejected"
-# }
+const userTypeDefs = `#graphql
 enum VerificationStatus {
     PENDING
     VERIFIED
@@ -48,3 +44,6 @@ input UpdateSellerProfileInput {
     payoutAccount: String
     verified: VerificationStatus!
 }
+`
+
+export default userTypeDefs;

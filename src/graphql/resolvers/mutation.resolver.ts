@@ -328,23 +328,3 @@ export const mutationResolvers = <MutationResolvers>{
     }
 };
 
-
-
-        // clearFavorites: async (
-        //     _: any,
-        //     __: any,
-        //     context: GraphQLContext
-        // )=>{
-
-        //     if (!context.token) throw new GraphQLError('Unauthorized', {
-        //         extensions: { code: 'UNAUTHORIZED', error: ERROR_MESSAGES.AUTH.INVALID_TOKEN }
-        //     });
-
-        //     const userId = context.token?.subject;
-
-        //     const result = await context.db
-        //         .delete(favorites)
-        //         .where(eq(favorites.userId, userId))
-        //         .returning();
-        //     return result[0];
-        // },
