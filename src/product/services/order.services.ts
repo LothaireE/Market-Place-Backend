@@ -2,7 +2,7 @@
 
 
 import db  from "../../db/db";
-import { products, orders, sellerProfiles, orderItems, payments } from "../../db/schema";
+import { products, orders, sellerProfiles, orderItems, payments, paymentOrders } from "../../db/schema";
 import { eq, and, lt, inArray } from "drizzle-orm";
 import { Order, OrderItem } from "../../graphql/generated/types.generated";
 import { stripe } from "../../config/config";
@@ -422,230 +422,163 @@ static async createCheckout (
             throw new Error(`Create payment failed: ${error.message}`)
         }
     }
+    
 
-    static async confirmPayment ( 
-        buyerUserId: string,
-        orderIds : string[],
-        paymentIntentId: string
-    ) : Promise<ConfirmPaymentResult>  {
+    static async confirmPayment(
+    buyerUserId: string,
+    orderIds: string[],
+    paymentIntentId: string
+    ): Promise<ConfirmPaymentResult> {
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
-        console.log('paymentIntent ===> ', paymentIntent);
-        if (!paymentIntent || paymentIntent.object !== "payment_intent") throw new Error('Invalid payment intent')
-        if (paymentIntent.status !== "succeeded") throw new Error(`Payment not completed. status=${paymentIntent.status}`);
+    if (!paymentIntent || paymentIntent.object !== "payment_intent") throw new Error("Invalid payment intent");
+    
 
-        // TODO: check cohérence amount/currency
-        // amountStripe = paymentIntent.amount (ex: 1200)
-        // currencyStripe = paymentIntent.currency (ex: "eur")
+    if (paymentIntent.status !== "succeeded") throw new Error(`Payment not completed. status=${paymentIntent.status}`);
 
-        return db.transaction(async(tx:any)=> {
+    return db.transaction(async (tx: any) => {
+        const ordersList: Order[] = await tx
+            .select({
+                id: orders.id,
+                status: orders.status,
+                buyerId: orders.buyerId,
+                currency: orders.currency,
+                totalAmount: orders.totalAmount,
+            })
+            .from(orders)
+            .where(inArray(orders.id, orderIds))
+            .for("update");
 
-            //lock my orders
-            const ordersList : Order[] = await tx
-                .select({
-                    id: orders.id,
-                    status: orders.status,
-                    buyerId: orders.buyerId,
-                    currency: orders.currency,
-                    totalAmount: orders.totalAmount
-                })
-                .from(orders)
-                .where(inArray(orders.id, orderIds))
-                .for("update")
-
-            if (ordersList.length !== orderIds.length) throw new Error('One or more orders not found.')
+        if (ordersList.length !== orderIds.length) throw new Error("One or more orders not found.");
         
-            for (const o of ordersList){
-                if (o.buyerId !== buyerUserId) throw new Error('Forbidden.')
-                if (o.status !== "PENDING") throw new Error(`Order  ${o.id} is not pending.`)
-            }
+        for (const o of ordersList) {
+            if (o.buyerId !== buyerUserId) throw new Error(`Order ${o.id} does not belong to this user.`);
+            if (o.status !== "PENDING") throw new Error(`Order ${o.id} is not pending.`);
+        }
 
-            const ordersTotalDb = ordersList.reduce((sum, order)=> sum + order.totalAmount, 0)
+        const ordersDbTotalAmount = ordersList.reduce((sum, order) => sum + order.totalAmount, 0);
+        if (paymentIntent.amount !== ordersDbTotalAmount) throw new Error("Amounts do not match.");
 
-            if (paymentIntent.amount !== ordersTotalDb) throw new Error("Amounts do not match.");
+        const currencies = new Set(ordersList.map((o) => o.currency));
+        if (currencies.size !== 1) throw new Error("Orders must have the same currency.");
 
-            // gathering items for each order
-            const orderItemRows : OrderItem[] = await tx
-                .select({ orderId: orderItems.orderId, productId: orderItems.productId })
-                .from(orderItems)
-                .where(inArray(orderItems.orderId, orderIds))
+        const dbCurrency = ordersList[0].currency;
+        if (paymentIntent.currency.toUpperCase() !== dbCurrency) throw new Error("Currencies do not match.");
 
-            const ordersWithItems = new Set(orderItemRows.map((row)=> row.orderId))
-            for (const id of orderIds) if (!ordersWithItems.has(id)) throw new Error(`Order ${id} has no item.`);
-            
-            const productIds = Array.from(new Set(orderItemRows.map((row)=> row.productId)))
+        const orderItemRows: OrderItem[] = await tx
+            .select({
+                orderId: orderItems.orderId,
+                productId: orderItems.productId,
+            })
+            .from(orderItems)
+            .where(inArray(orderItems.orderId, orderIds));
 
-            const lockedProducts = await tx
-                .select({
-                    id:products.id,
-                    status: products.status,
-                    reservedByUserId: products.reservedByUserId
-                })
-                .from(products)
-                .where(inArray(products.id, productIds))
-                .for("update")
+        const ordersWithItems = new Set(orderItemRows.map((row) => row.orderId));
+        for (const id of orderIds) {
+            if (!ordersWithItems.has(id)) throw new Error(`Order ${id} has no item.`);
+        }
 
-            if (lockedProducts.length !== productIds.length) throw new Error("One or more products not found.")    
-            for (const lp of lockedProducts) {
-                if (lp.status !== "RESERVED") throw new Error(`Product ${lp.id} is not reserved.`)
-                if (lp.reservedByUserId !== buyerUserId) throw new Error(`Product ${lp.id} is reserved by another user.`)
-            }
+        const productIds = Array.from(
+            new Set(orderItemRows.map((row) => row.productId))
+        );
 
-            const updatedOrders = await tx
-                .update(orders)
-                .set({status: "PAID", reservedAt: null, reservedByUserId: null})
-                .where(and(inArray(orders.id, orderIds), eq(orders.status, "PENDING")))
-                .returning({
-                    id: orders.id,
-                    status: orders.status,
-                })
+        const lockedProducts = await tx
+            .select({
+                id: products.id,
+                status: products.status,
+                reservedByUserId: products.reservedByUserId,
+            })
+            .from(products)
+            .where(inArray(products.id, productIds))
+            .for("update");
 
+        if (lockedProducts.length !== productIds.length) throw new Error("One or more products not found.");
         
-            if (updatedOrders.length !== orderIds.length) throw new Error("One or more orders cannot be confirmed.") 
 
-            const updatedProducts = await tx
-                .update(products)
-                .set({status: "SOLD"})
-                .where(and(
-                    inArray(products.id, productIds),
-                    eq(products.status, "RESERVED"),
-                    eq(products.reservedByUserId, buyerUserId), 
-                ))
-                .returning({ id: products.id })
+        for (const lp of lockedProducts) {
+            if (lp.status !== "RESERVED") throw new Error(`Product ${lp.id} is not reserved.`);
+            if (lp.reservedByUserId !== buyerUserId) throw new Error(`Product ${lp.id} is reserved by another user.`);
+        }
 
-            if (updatedProducts.length !== productIds.length) throw new Error("Some products cannot be marked as sold.") 
+        const updatedOrders = await tx
+            .update(orders)
+            .set({
+                status: "PAID",
+                reservedAt: null,
+                reservedByUserId: null,
+            })
+            .where(and(inArray(orders.id, orderIds), eq(orders.status, "PENDING")))
+            .returning({
+                id: orders.id,
+                status: orders.status,
+            });
 
-            const updatedOrderIds = updatedOrders.map((o: any) => o.id)
-
-            for (const o of ordersList) {
-                await tx 
-                    .insert(payments)
-                    .values({
-                        orderId: o.id,
-                        provider: "STRIPE",
-                        providerReference: paymentIntent.id,
-                        amount: o.totalAmount, // amount of this specific o of orderList
-                        currency: o.currency,
-                        status: paymentIntent.status
-                    })
-                    .onConflictDoUpdate({
-                        target: [payments.provider, payments.providerReference],
-                        set: {
-                            provider: "STRIPE",
-                            providerReference: paymentIntent.id,
-                            amount: o.totalAmount, // amount of this specific o of orderList
-                            currency: o.currency,
-                            status: paymentIntent.status,
-                            updatedAt:  new Date(),
-                        }
-                    })
-            }
-
-            return {
-                orderIds: updatedOrderIds,
-                orderStatus: "PAID",
-                productIds, // doit retourner un tableau desormais
-                productStatus: "SOLD",
-            }
-    })
-
-}}
-
-
-
-// static async providePaymentMethod (
-//         createdOrders: any,
-//         customerEmail: string | undefined,
-//         newSuccessUrl?: string | undefined,
-//         newCancelUrl?: string | undefined
-//     ) {
-//         if (!customerEmail) throw new Error("Customer e-mail not provided.")
+        if (updatedOrders.length !== orderIds.length) throw new Error("One or more orders cannot be confirmed.");
         
-//         // const successUrl = 'http://localhost:5173/account/confirm-checkout'
-//         const successUrl = newSuccessUrl ?? `${CLIENT_URL}/account/confirm-checkout`
-//         const cancelUrl = newCancelUrl ?? `${CLIENT_URL}/account/cart`
 
-//         const lineItems = createdOrders.orders.map((o: any) => {
-//             return {
-//                 price_data: {
-//                     currency: o.currency,
-//                     product_data: {
-//                         name: "market place order",
-//                         metadata: {
-//                             order_id: o.id,
-//                             customer_email: customerEmail,
-//                             // seller_id: o.sellerId
-//                         }
-//                     },
-//                     unit_amount: toCents(o.totalAmount),
-//                 },
-//                 quantity: 1 // TODO: add orderItems to fill all the necessary infos
-//             }
-//         })
+        const updatedProducts = await tx
+            .update(products)
+            .set({
+                status: "SOLD",
+                reservedAt: null,
+                reservedByUserId: null,
+            })
+            .where(
+                and(
+                inArray(products.id, productIds),
+                eq(products.status, "RESERVED"),
+                eq(products.reservedByUserId, buyerUserId)
+                )
+            )
+            .returning({ id: products.id });
 
+        if (updatedProducts.length !== productIds.length) throw new Error("Some products cannot be marked as sold.");
+       
 
-//         try {
-//             const session = await STRIPE.checkout.sessions.create({
-//                 payment_method_types: ["card"],
-//                 mode: "payment",
-//                 line_items: lineItems,
-//                 success_url: successUrl,
-//                 cancel_url: cancelUrl,
-//             })
-//             return { url: session.url}
-//         } catch (e: any) {
-//             // return { error: e.message }
-//             throw new Error(`${e.message}`)
-//         }
+        const [payment] = await tx
+            .insert(payments)
+            .values({
+                buyerId: buyerUserId,
+                provider: "STRIPE",
+                providerReference: paymentIntent.id,
+                amount: ordersDbTotalAmount,
+                currency: dbCurrency,
+                status: paymentIntent.status,
+            })
+            .onConflictDoUpdate({
+                target: [payments.provider, payments.providerReference],
+                set: {
+                buyerId: buyerUserId,
+                amount: ordersDbTotalAmount,
+                currency: dbCurrency,
+                status: paymentIntent.status,
+                updatedAt: new Date(),
+                },
+            })
+            .returning({
+                id: payments.id,
+            });
 
-//     }
+        await tx
+            .insert(paymentOrders)
+            .values(
+                ordersList.map((o) => ({
+                paymentId: payment.id,
+                orderId: o.id,
+                }))
+            )
+            .onConflictDoNothing();
 
+        const updatedOrderIds = updatedOrders.map((o: any) => o.id);
 
-
-
-//  static async providePaymentMethod (
-//         createdOrders: any,
-//         customerEmail: string | undefined,
-//         newSuccessUrl?: string | undefined,
-//         newCancelUrl?: string | undefined
-//     ) {
-//         if (!customerEmail) throw new Error("Customer e-mail not provided.")
-        
-//         // const successUrl = 'http://localhost:5173/account/confirm-checkout'
-//         const successUrl = newSuccessUrl ?? `${CLIENT_URL}/account/confirm-checkout`
-//         const cancelUrl = newCancelUrl ?? `${CLIENT_URL}/account/cart`
-
-//         const lineItems = createdOrders.orders.map((o: any) => {
-//             return {
-//                 price_data: {
-//                     currency: o.currency,
-//                     product_data: {
-//                         name: "market place order",
-//                         metadata: {
-//                             order_id: o.id,
-//                             customer_email: customerEmail,
-//                             // seller_id: o.sellerId
-//                         }
-//                     },
-//                     unit_amount: toCents(o.totalAmount),
-//                 },
-//                 quantity: 1 // TODO: add orderItems to fill all the necessary infos
-//             }
-//         })
+        return {
+            orderIds: updatedOrderIds,
+            orderStatus: "PAID",
+            productIds,
+            productStatus: "SOLD",
+        };
+    });
+    }
+}
 
 
-//         try {
-//             const session = await STRIPE.checkout.sessions.create({
-//                 payment_method_types: ["card"],
-//                 mode: "payment",
-//                 line_items: lineItems,
-//                 success_url: successUrl,
-//                 cancel_url: cancelUrl,
-//             })
-//             return { url: session.url}
-//         } catch (e: any) {
-//             // return { error: e.message }
-//             throw new Error(`${e.message}`)
-//         }
-
-//     }
