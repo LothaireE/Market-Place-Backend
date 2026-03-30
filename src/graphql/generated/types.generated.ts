@@ -228,7 +228,7 @@ export type OrdersPage = {
 };
 
 export type PaginationInput = {
-  page?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Float']['input']>;
   pageSize?: InputMaybe<Scalars['Int']['input']>;
   sortBy?: InputMaybe<SortBy>;
   sortDirection?: InputMaybe<SortDir>;
@@ -510,6 +510,7 @@ export type ResolversTypes = {
   Date: ResolverTypeWrapper<Scalars['Date']['output']>;
   Favorite: ResolverTypeWrapper<Favorite>;
   FavoritesInput: FavoritesInput;
+  Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   FulfillmentMethod: FulfillmentMethod;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
@@ -551,6 +552,7 @@ export type ResolversParentTypes = {
   Date: Scalars['Date']['output'];
   Favorite: Favorite;
   FavoritesInput: FavoritesInput;
+  Float: Scalars['Float']['output'];
   ID: Scalars['ID']['output'];
   Int: Scalars['Int']['output'];
   Mutation: {};
